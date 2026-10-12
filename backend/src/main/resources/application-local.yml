@@ -1,0 +1,20 @@
+spring:
+  datasource:
+    url: jdbc:oracle:thin:@localhost:1521/BIHOMEDB
+    username: bihome
+    password: bihome
+  flyway:
+    locations: classpath:db/migration,classpath:db/seed-local
+    out-of-order: true
+bihome:
+  jwt:
+    secret: ${BIHOME_JWT_SECRET:change-me-local-only-at-least-32-bytes-long}
+    cookie-secure: false
+  auth:
+    log-otp: true
+  bank-webhook:
+    secret: ${BIHOME_BANK_WEBHOOK_SECRET:local-bank-webhook-secret}
+    simulation-enabled: true
+  # Gắn ảnh minh hoạ (resources/demo-images) cho dữ liệu mẫu chưa có ảnh — DemoImageSeeder.
+  demo-images:
+    enabled: true
