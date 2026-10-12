@@ -1,0 +1,17 @@
+node_modules/
+dist/
+target/
+*.tsbuildinfo
+# Tệp người dùng tải lên (chỉ thư mục gốc của backend, không phải package common/storage)
+/backend/storage/
+.env
+.env.*
+!.env.example
+*.log
+.idea/
+.vscode/
+*.iml
+.DS_Store
+
+# Bản lưu tài liệu cũ (xem CLAUDE.md)
+/bihome-claude-md.zip
