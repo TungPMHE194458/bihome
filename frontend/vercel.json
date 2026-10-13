@@ -5,7 +5,7 @@
   "buildCommand": "pnpm build",
   "outputDirectory": "dist",
   "rewrites": [
-    { "source": "/api/:path*", "destination": "https://discrete-replied-alarm-liberty.trycloudflare.com/api/:path*" },
+    { "source": "/api/:path*", "destination": "https://respective-management-departmental-resumes.trycloudflare.com/api/:path*" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
