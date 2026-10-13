@@ -18,6 +18,7 @@ import com.bihome.common.storage.FileService;
 import com.bihome.notification.Announcement.Audience;
 import com.bihome.notification.Announcement.Category;
 import com.bihome.notification.Announcement.Status;
+import com.bihome.residentapp.ResidentInboxService;
 import jakarta.persistence.EntityManager;
 import java.time.Clock;
 import java.time.Instant;
@@ -41,6 +42,7 @@ class AnnouncementServiceTest {
     @Mock FileAttachmentRepository files;
     @Mock FileService fileService;
     @Mock NotificationService notificationService;
+    @Mock ResidentInboxService residentInbox;
     @Mock BuildingService buildingService;
     @Mock BuildingContext buildingContext;
     @Mock EntityManager entityManager;
@@ -50,7 +52,7 @@ class AnnouncementServiceTest {
     @BeforeEach
     void setUp() {
         service = new AnnouncementService(announcements, buildings, files, fileService, notificationService,
-                buildingService, buildingContext, entityManager, Clock.fixed(NOW, ZoneId.of("Asia/Ho_Chi_Minh")));
+                residentInbox, buildingService, buildingContext, entityManager, Clock.fixed(NOW, ZoneId.of("Asia/Ho_Chi_Minh")));
     }
 
     @Test

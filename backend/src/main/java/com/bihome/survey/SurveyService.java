@@ -12,9 +12,11 @@ import com.bihome.common.web.PageParams;
 import com.bihome.common.web.PageResponse;
 import com.bihome.common.web.SpecificationBuilder;
 import com.bihome.resident.Resident;
-import com.bihome.resident.ResidentAudienceService;
 import com.bihome.resident.ResidentAudienceService.Audience;
+import com.bihome.resident.ResidentAudienceService;
 import com.bihome.resident.ResidentRepository;
+import com.bihome.residentapp.ResidentInboxItem;
+import com.bihome.residentapp.ResidentInboxService;
 import com.bihome.survey.Survey.Status;
 import com.bihome.survey.SurveyQuestion.Type;
 import com.bihome.survey.dto.SurveyDtos;
@@ -57,6 +59,7 @@ public class SurveyService {
     private final SurveyRepository surveys;
     private final SurveyResponseRepository responses;
     private final ResidentAudienceService audienceService;
+    private final ResidentInboxService residentInbox;
     private final ApartmentService apartmentService;
     private final ResidentRepository residents;
     private final BuildingService buildingService;
@@ -218,6 +221,9 @@ public class SurveyService {
         s.setStatus(Status.OPEN);
         s.setPublishedAt(OffsetDateTime.now(clock));
         surveys.saveAndFlush(s);
+        residentInbox.toResidents(audienceService.resolve(s.getBuildingId(), s.getAudience(), s.getTargets()).stream()
+                        .map(ResidentAudienceService.Recipient::residentId).toList(), ResidentInboxItem.Type.SURVEY,
+                "Khảo sát mới: " + s.getTitle(), "Mời bạn trả lời khảo sát của Ban quản lý.", "/surveys/" + s.getId());
         return reload(id);
     }
 
@@ -382,8 +388,13 @@ public class SurveyService {
         if (!apartment.getBuildingId().equals(s.getBuildingId())) {
             throw field("apartmentId", "Căn hộ không thuộc tòa của khảo sát.");
         }
-        if (!audienceService.apartmentInAudience(apartment, s.getAudience(), s.getTargets())) {
-            throw field("apartmentId", "Căn hộ không thuộc đối tượng của khảo sát.");
+        // Đối tượng "Cư dân cụ thể": xét theo cư dân trả lời, không theo căn hộ.
+        boolean inAudience = s.getAudience() == Audience.RESIDENT
+                ? req.residentId() != null && s.getTargets().contains(String.valueOf(req.residentId()))
+                : audienceService.apartmentInAudience(apartment, s.getAudience(), s.getTargets());
+        if (!inAudience) {
+            throw field(s.getAudience() == Audience.RESIDENT ? "residentId" : "apartmentId",
+                    "Căn hộ / cư dân không thuộc đối tượng của khảo sát.");
         }
         r.setApartmentId(apartment.getId());
         if (req.residentId() != null) {

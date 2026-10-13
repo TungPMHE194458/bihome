@@ -51,6 +51,7 @@ phí, kể cả thương mại) và [randomuser.me](https://randomuser.me) (châ
 | Tên đăng nhập | Mật khẩu | Vai trò |
 |---|---|---|
 | `admin` | `Admin@123` | Admin hệ thống (mọi quyền, mọi tòa) |
+| `0900000001` | `CuDan@123` | Cư dân Nguyễn Văn An (căn A0101 SKY01) — đăng nhập **app cư dân** |
 
 Các vai trò có sẵn: Admin hệ thống, Trưởng ban quản lý, Nhân viên vận hành, Kế toán, Cư dân — tạo thêm người dùng ở
 **Cài đặt › Người dùng hệ thống** (mật khẩu tạm hiện một lần, đăng nhập lần đầu phải đổi).
@@ -98,18 +99,20 @@ bihome/
 │       │   ├── ticket/ document/
 │       │   ├── feerate/ meter/ feenotice/ payment/ vietqr/   # tài chính
 │       │   ├── sos/ notification/ audit/ dashboard/ setting/
+│       │   ├── residentapp/      # API app cư dân (/api/v1/resident/**), tài khoản app, hộp thư, push
 │       └── resources/
-│           ├── db/migration/     # Flyway V001…V160 (không sửa file đã chạy)
+│           ├── db/migration/     # Flyway V001…V170 (không sửa file đã chạy)
 │           ├── db/seed-local/    # dữ liệu mẫu R__ (chỉ profile local)
 │           └── fonts/            # Be Vietnam Pro (SIL OFL) cho PDF
-└── frontend/
-    └── src/
-        ├── app/                  # router, theme, providers
-        ├── components/           # DataTable, form, dialog, trạng thái dùng chung
-        ├── features/<module>/    # types, api, hooks, schema, constants, components, pages
-        ├── layouts/              # header (bộ chọn tòa, SOS, thông báo), sidebar (menuConfig)
-        ├── lib/ hooks/ stores/   # http, định dạng, kỳ thu phí, useListParams, Zustand
-        └── pages/                # bảng điều khiển, trang lỗi
+├── frontend/
+│   └── src/
+│       ├── app/                  # router, theme, providers
+│       ├── components/           # DataTable, form, dialog, trạng thái dùng chung
+│       ├── features/<module>/    # types, api, hooks, schema, constants, components, pages
+│       ├── layouts/              # header (bộ chọn tòa, SOS, thông báo), sidebar (menuConfig)
+│       ├── lib/ hooks/ stores/   # http, định dạng, kỳ thu phí, useListParams, Zustand
+│       └── pages/                # bảng điều khiển, trang lỗi
+└── mobile/                       # app cư dân (Expo / React Native) — xem mobile/README.md
 ```
 
 ## Ghi chú

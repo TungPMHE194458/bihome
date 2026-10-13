@@ -9,5 +9,6 @@ public enum NotificationType {
     BOOKING_PENDING,
     SYSTEM,
     PAYMENT_RECEIVED,
-    SOS_ALERT
+    SOS_ALERT,
+    DECLARATION
 }

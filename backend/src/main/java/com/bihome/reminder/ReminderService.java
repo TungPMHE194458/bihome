@@ -14,9 +14,11 @@ import com.bihome.reminder.Reminder.Channel;
 import com.bihome.reminder.Reminder.ScheduleType;
 import com.bihome.reminder.Reminder.Status;
 import com.bihome.reminder.dto.ReminderDtos;
-import com.bihome.resident.ResidentAudienceService;
 import com.bihome.resident.ResidentAudienceService.Audience;
 import com.bihome.resident.ResidentAudienceService.Recipient;
+import com.bihome.resident.ResidentAudienceService;
+import com.bihome.residentapp.ResidentInboxItem;
+import com.bihome.residentapp.ResidentInboxService;
 import jakarta.persistence.EntityManager;
 import java.time.Clock;
 import java.time.OffsetDateTime;
@@ -55,6 +57,7 @@ public class ReminderService {
     private final ReminderDeliveryRepository deliveries;
     private final ResidentAudienceService audienceService;
     private final MessageSender messageSender;
+    private final ResidentInboxService residentInbox;
     private final BuildingService buildingService;
     private final BuildingContext buildingContext;
     private final EntityManager entityManager;
@@ -276,7 +279,7 @@ public class ReminderService {
                 switch (channel) {
                     case IN_APP -> {
                         d.setStatus(ReminderDelivery.Status.SENT);
-                        d.setNote("Lưu chờ app cư dân");
+                        d.setNote("Hộp thư app cư dân");
                     }
                     case EMAIL -> external(d, MessageSender.Channel.EMAIL, recipient.email(), "Không có email", r.getTitle(), text);
                     case SMS -> external(d, MessageSender.Channel.SMS, recipient.phone(), "Không có số điện thoại", r.getTitle(), text);
@@ -285,6 +288,10 @@ public class ReminderService {
             }
         }
         deliveries.saveAll(batch);
+        if (r.getChannels().contains(Channel.IN_APP)) {
+            residentInbox.toResidents(recipients.stream().map(Recipient::residentId).toList(),
+                    ResidentInboxItem.Type.REMINDER, r.getTitle(), text, "/inbox");
+        }
         r.setRunCount(run);
         r.setRecipientCount(recipients.size());
         r.setLastSentAt(now);

@@ -26,6 +26,7 @@ import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -79,6 +80,14 @@ public class DocumentService {
 
     public DocumentDtos.Response get(Long id) {
         return mapper.toResponse(requireAccessible(id));
+    }
+
+    /** App cư dân: tài liệu của tòa dành cho các nhóm đối tượng cư dân được xem (Tất cả cư dân / Chủ sở hữu / Người thuê). */
+    public PageResponse<DocumentDtos.Response> listForAudiences(Long buildingId, Set<DocumentAudience> audiences,
+                                                                PageParams pageParams) {
+        Specification<Document> spec = (root, q, cb) -> cb.and(cb.equal(root.get("buildingId"), buildingId),
+                root.get("audience").in(audiences));
+        return PageResponse.of(documents.findAll(spec, pageParams.toPageable(DEFAULT_SORT, SORTS)), mapper::toResponse);
     }
 
     public List<DocumentDtos.FileVersion> fileVersions(Long id) {

@@ -24,6 +24,7 @@ import type { Column, RowAction } from '@/components/DataTable/types'
 import { ErrorState } from '@/components/ErrorState'
 import { PageBreadcrumb } from '@/components/ListPage/PageBreadcrumb'
 import { StatusChip } from '@/components/StatusChip'
+import { AppAccountPanel } from '@/features/resident/components/AppAccountPanel'
 import { useResidentActions } from '@/features/resident/components/useResidentActions'
 import {
   APP_ACCOUNT_STATUS,
@@ -134,6 +135,8 @@ export function ResidentDetailPage() {
       <Paper variant="outlined" sx={{ p: 2.5 }}>
         <ProfileSection resident={resident} />
       </Paper>
+
+      <AppAccountPanel resident={resident} />
 
       <Paper variant="outlined">
         <Typography variant="subtitle1" fontWeight={700} sx={{ px: 2.5, pt: 2 }}>

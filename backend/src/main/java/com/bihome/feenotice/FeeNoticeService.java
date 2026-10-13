@@ -35,6 +35,8 @@ import com.bihome.resident.ResidentAudienceService;
 import com.bihome.resident.ResidentAudienceService.Audience;
 import com.bihome.resident.ResidentEnums.ResidenceStatus;
 import com.bihome.resident.ResidentEnums.ResidentRole;
+import com.bihome.residentapp.ResidentInboxItem;
+import com.bihome.residentapp.ResidentInboxService;
 import com.bihome.setting.SettingService;
 import com.bihome.transaction.FinancialTransaction;
 import com.bihome.transaction.FinancialTransactionRepository;
@@ -101,6 +103,7 @@ public class FeeNoticeService {
     private final BuildingService buildingService;
     private final BuildingContext buildingContext;
     private final Clock clock;
+    private final ResidentInboxService residentInbox;
 
     // ---------------------------------------------------------------- Đọc
 
@@ -112,6 +115,15 @@ public class FeeNoticeService {
 
     public FeeNoticeDtos.Response get(Long id) {
         return toResponse(requireAccessible(id));
+    }
+
+    /** App cư dân: thông báo đã phát hành của một căn (không gồm nháp / đã huỷ), kỳ mới nhất trước. */
+    public PageResponse<FeeNoticeDtos.Summary> listIssued(Long apartmentId, PageParams pageParams) {
+        Specification<FeeNotice> spec = (root, q, cb) -> cb.and(cb.equal(root.get("apartmentId"), apartmentId),
+                root.get("status").in(Status.DRAFT, Status.CANCELLED).not());
+        var page = notices.findAll(spec, pageParams.toPageable(DEFAULT_SORT, SORTS));
+        Map<Long, String> carried = carriedCodes(page.getContent());
+        return PageResponse.of(page, n -> toSummary(n, carried));
     }
 
     public FeeNoticeDtos.VietQr vietQr(Long id) {
@@ -339,6 +351,13 @@ public class FeeNoticeService {
         n.setPaidAmount(n.getPaidAmount().add(delta).max(BigDecimal.ZERO));
         n.setStatus(n.collectedStatus(today()));
         boolean paid = n.getStatus() == Status.PAID;
+        if (delta.signum() > 0) {
+            residentInbox.toApartment(n.getApartmentId(), ResidentInboxItem.Type.PAYMENT,
+                    "Đã nhận " + FeeCalculator.number(delta) + " đ cho thông báo phí " + n.getCode(),
+                    paid ? "Thông báo phí kỳ " + BillingPeriods.label(n.getBillingPeriod()) + " đã thanh toán đủ."
+                            : "Còn nợ " + FeeCalculator.number(n.outstanding()) + " đ.",
+                    "/fees/" + n.getId());
+        }
         if (paid && !wasPaid) {
             for (FinancialTransaction t : transactions.findByFeeNoticeId(n.getId())) {
                 if (t.getStatus() == FinancialTransaction.Status.PENDING) {
@@ -550,15 +569,19 @@ public class FeeNoticeService {
         sendToResidents(n);
     }
 
-    /** Gửi email thông báo phí cho cư dân đang ở căn (môi trường thử chỉ ghi log); app cư dân dùng sau. */
+    /** Gửi hộp thư app cư dân và (nếu bật ở Cấu hình chung) email cho cư dân đang ở căn (môi trường thử chỉ ghi log). */
     private void sendToResidents(FeeNotice n) {
-        if (!settingService.current().feeNoticeEmail()) {
-            return;
-        }
         Apartment a = apartments.findById(n.getApartmentId()).orElseThrow();
         String subject = "Thông báo phí kỳ " + BillingPeriods.label(n.getBillingPeriod()) + " – căn " + a.getCode();
         String text = "Mã thông báo: " + n.getCode() + "\nTổng cộng: " + FeeCalculator.number(n.getTotalAmount())
                 + " đ\nHạn thanh toán: " + n.getDueDate().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+        residentInbox.toApartment(a.getId(), ResidentInboxItem.Type.FEE_NOTICE, subject,
+                "Tổng cộng " + FeeCalculator.number(n.getTotalAmount()) + " đ, hạn thanh toán "
+                        + n.getDueDate().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) + ".",
+                "/fees/" + n.getId());
+        if (!settingService.current().feeNoticeEmail()) {
+            return;
+        }
         for (ResidentAudienceService.Recipient r : audienceService.resolve(n.getBuildingId(), Audience.APARTMENT,
                 Set.of(a.getId().toString()))) {
             if (r.email() != null && !r.email().isBlank()) {

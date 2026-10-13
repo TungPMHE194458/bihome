@@ -24,6 +24,8 @@ export const ENTITY_TYPE_LABEL: Record<string, string> = {
   ASSET_ITEM: 'Hạng mục căn hộ',
   RESIDENT: 'Cư dân',
   APARTMENT_RESIDENT: 'Cư trú',
+  RESIDENT_ACCOUNT: 'Tài khoản app cư dân',
+  RESIDENT_DECLARATION: 'Phiếu kê khai (app)',
   DOCUMENT: 'Tài liệu',
   DOCUMENT_CATEGORY: 'Danh mục tài liệu',
   TICKET: 'Yêu cầu',

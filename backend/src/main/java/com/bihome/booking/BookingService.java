@@ -23,18 +23,20 @@ import com.bihome.notification.NotificationService;
 import com.bihome.notification.NotificationType;
 import com.bihome.resident.Resident;
 import com.bihome.resident.ResidentRepository;
-import com.bihome.transaction.FinancialTransaction;
+import com.bihome.residentapp.ResidentInboxItem;
+import com.bihome.residentapp.ResidentInboxService;
 import com.bihome.transaction.FinancialTransaction.Method;
 import com.bihome.transaction.FinancialTransaction.SourceType;
+import com.bihome.transaction.FinancialTransaction;
 import com.bihome.transaction.TransactionService;
 import com.bihome.transaction.dto.TransactionDtos;
 import com.bihome.user.AppUser;
 import com.bihome.user.AppUserRepository;
 import com.bihome.user.UserStatus;
 import com.bihome.voucher.Voucher.ApplyScope;
-import com.bihome.voucher.VoucherRedemptionService;
 import com.bihome.voucher.VoucherRedemptionService.Redemption;
 import com.bihome.voucher.VoucherRedemptionService.Target;
+import com.bihome.voucher.VoucherRedemptionService;
 import jakarta.persistence.EntityManager;
 import java.math.BigDecimal;
 import java.time.Clock;
@@ -89,6 +91,7 @@ public class BookingService {
     private final VoucherRedemptionService voucherService;
     private final NotificationService notificationService;
     private final AppUserRepository users;
+    private final ResidentInboxService residentInbox;
     private final EntityManager entityManager;
     private final Clock clock;
 
@@ -212,6 +215,7 @@ public class BookingService {
         b.setStatus(Status.APPROVED);
         decided(b);
         bookings.saveAndFlush(b);
+        notifyResident(b, "Lượt đặt " + b.getCode() + " đã được duyệt", slotText(b));
         return get(id);
     }
 
@@ -224,7 +228,18 @@ public class BookingService {
         decided(b);
         releaseFully(b);
         bookings.saveAndFlush(b);
+        notifyResident(b, "Lượt đặt " + b.getCode() + " bị từ chối", "Lý do: " + b.getRejectReason());
         return get(id);
+    }
+
+    /** Hộp thư app: cư dân đặt lượt (nếu có), không thì cư dân có tài khoản đang ở căn. */
+    private void notifyResident(AmenityBooking b, String title, String body) {
+        String link = "/bookings/" + b.getId();
+        if (b.getResidentId() != null) {
+            residentInbox.toResidents(List.of(b.getResidentId()), ResidentInboxItem.Type.BOOKING, title, body, link);
+        } else {
+            residentInbox.toApartment(b.getApartmentId(), ResidentInboxItem.Type.BOOKING, title, body, link);
+        }
     }
 
     /**

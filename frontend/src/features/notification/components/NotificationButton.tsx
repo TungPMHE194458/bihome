@@ -1,4 +1,5 @@
 import AssignmentIndOutlinedIcon from '@mui/icons-material/AssignmentIndOutlined'
+import AssignmentTurnedInOutlinedIcon from '@mui/icons-material/AssignmentTurnedInOutlined'
 import CampaignOutlinedIcon from '@mui/icons-material/CampaignOutlined'
 import CrisisAlertIcon from '@mui/icons-material/CrisisAlert'
 import EventAvailableOutlinedIcon from '@mui/icons-material/EventAvailableOutlined'
@@ -44,6 +45,7 @@ const ICON: Record<NotificationType, ReactNode> = {
   BOOKING_PENDING: <EventAvailableOutlinedIcon fontSize="small" />,
   PAYMENT_RECEIVED: <PaymentsOutlinedIcon fontSize="small" />,
   SOS_ALERT: <CrisisAlertIcon fontSize="small" color="error" />,
+  DECLARATION: <AssignmentTurnedInOutlinedIcon fontSize="small" />,
   SYSTEM: <NotificationsNoneOutlinedIcon fontSize="small" />,
 }
 

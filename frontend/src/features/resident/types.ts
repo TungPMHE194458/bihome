@@ -135,3 +135,19 @@ export interface ApartmentMember {
   tempResidenceRegistered: boolean
   version: number
 }
+
+/** Tài khoản app cư dân (BQL cấp; đăng nhập bằng số điện thoại). */
+export interface AppAccount {
+  residentId: number
+  phone: string
+  status: 'ACTIVE' | 'LOCKED'
+  mustChangePassword: boolean
+  lastLoginAt?: string
+  createdAt: string
+  createdBy?: string
+}
+
+export interface AppAccountPassword {
+  phone: string
+  temporaryPassword: string
+}

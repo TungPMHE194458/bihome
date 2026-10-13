@@ -19,6 +19,7 @@ public class JwtService {
     private static final String CLAIM_USERNAME = "username";
     private static final String CLAIM_TYPE = "typ";
     private static final String TYPE_ACCESS = "access";
+    private static final String TYPE_RESIDENT = "resident";
 
     private final SecretKey key;
     private final Duration accessTtl;
@@ -46,7 +47,31 @@ public class JwtService {
         return accessTtl.toSeconds();
     }
 
+    /**
+     * Token app cư dân: {@code typ} khác token nhân viên nên {@link #parseAccessToken} luôn từ chối nó (và ngược lại)
+     * — token cư dân chỉ dùng được ở chuỗi bảo mật {@code /api/v1/resident/**}.
+     */
+    public String createResidentAccessToken(Long accountId, String phone) {
+        Instant now = clock.instant();
+        return Jwts.builder()
+                .subject(String.valueOf(accountId))
+                .claim(CLAIM_USERNAME, phone)
+                .claim(CLAIM_TYPE, TYPE_RESIDENT)
+                .issuedAt(Date.from(now))
+                .expiration(Date.from(now.plus(accessTtl)))
+                .signWith(key)
+                .compact();
+    }
+
+    public Optional<AccessTokenClaims> parseResidentAccessToken(String token) {
+        return parse(token, TYPE_RESIDENT);
+    }
+
     public Optional<AccessTokenClaims> parseAccessToken(String token) {
+        return parse(token, TYPE_ACCESS);
+    }
+
+    private Optional<AccessTokenClaims> parse(String token, String expectedType) {
         try {
             Claims claims = Jwts.parser()
                     .verifyWith(key)
@@ -54,7 +79,7 @@ public class JwtService {
                     .build()
                     .parseSignedClaims(token)
                     .getPayload();
-            if (!TYPE_ACCESS.equals(claims.get(CLAIM_TYPE, String.class)) || claims.getIssuedAt() == null) {
+            if (!expectedType.equals(claims.get(CLAIM_TYPE, String.class)) || claims.getIssuedAt() == null) {
                 return Optional.empty();
             }
             return Optional.of(new AccessTokenClaims(Long.valueOf(claims.getSubject()),

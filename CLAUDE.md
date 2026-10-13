@@ -18,7 +18,7 @@ Giao diện tham khảo: màn hình "Danh sách tài liệu" (sidebar 2 tầng, 
   `excel/`, `messaging/`, `pdf/`), `auth/`, `user/`, `building/`, `apartment/`, `asset/`, `resident/`, `document/`,
   `ticket/`, `accesscard/`, `voucher/`, `amenity/`, `servicecatalog/`, `booking/`, `transaction/`, `amenityreport/`,
   `audit/`, `notification/`, `dashboard/`, `reminder/`, `survey/`, `feerate/`, `meter/`, `feenotice/`, `payment/`,
-  `vietqr/`, `sos/`, `setting/`, migration V001–V003, V010–V160 +
+  `vietqr/`, `sos/`, `setting/`, `residentapp/`, `declaration/`, migration V001–V003, V010–V180 +
   seed local (admin, 4 tòa, 34 căn hộ, xe, 8 cư dân, 6 yêu cầu, 7 thẻ từ, 4 voucher, 3 tiện ích và 4 dịch vụ mẫu ở
   SKY01, 6 đăng ký tiện ích, 2 đơn dịch vụ và giao dịch mẫu, 2 nhắc nhở, 2 khảo sát (1 đang mở có 3 phản hồi), đơn giá +
   tài khoản VietQR giả + chỉ số điện / nước 2 kỳ trước tháng chạy seed của mọi căn SKY01 (A0203 tăng bất thường), 1
@@ -32,9 +32,44 @@ Giao diện tham khảo: màn hình "Danh sách tài liệu" (sidebar 2 tầng, 
   **Dịch vụ** (tab Đơn dịch vụ), **Loại dịch vụ**, **Lịch sử giao dịch**, **Báo cáo tiện ích**, **Nhắc nhở**, **Khảo
   sát ý kiến** (danh sách + chi tiết có biểu đồ kết quả), **Thông báo phí** (danh sách + chi tiết), **Số liệu**, **Đơn
   giá** (`/fee-rates`, thêm vào menu Thông báo phí), **Lịch sử thanh toán**, **Thanh toán tự động (VietQR)**, **Cảnh báo
-  SOS** (`/sos-alerts`, menu Yêu cầu và hỗ trợ + nút SOS header), **Cấu hình chung** (`/settings/general`). Chi tiết
-  căn hộ đã có đủ tab. README.md ở gốc repo. Ngoài phạm vi web BQL: app cư dân (kênh Trong app, tài khoản app, SOS nguồn
-  APP), nhà cung cấp email / SMS thật, danh mục phường/xã theo tỉnh (Phường/Xã nhập tay). Mục "Dự án": không làm.
+  SOS** (`/sos-alerts`, menu Yêu cầu và hỗ trợ + nút SOS header), **Cấu hình chung** (`/settings/general`), **Kê khai từ
+  cư dân** (`/declarations`, menu Quản lý tòa nhà). Chi tiết
+  căn hộ đã có đủ tab. README.md ở gốc repo. **App cư dân** (`mobile/`, Expo SDK 57) — xem mục bên dưới. Chưa làm:
+  nhà cung cấp email / SMS thật (OTP quên mật khẩu app → liên hệ BQL), danh mục phường/xã theo tỉnh (Phường/Xã nhập tay),
+  hạ tầng production (`docs/MOBILE_PLAN.md`). Mục "Dự án": không làm.
+- App cư dân: backend `residentapp/` (V170: `RESIDENT_ACCOUNT` đăng nhập bằng SĐT duy nhất toàn hệ thống,
+  `RESIDENT_REFRESH_TOKEN` xoay vòng — dùng lại token cũ thu hồi mọi phiên, `RESIDENT_PUSH_TOKEN`, `RESIDENT_INBOX`).
+  Chuỗi bảo mật riêng `ResidentSecurityConfig` (`@Order(1)`, `/api/v1/resident/**`): JWT `typ=resident` nên token cư
+  dân không gọi được API BQL và ngược lại. `ResidentAuthFilter` nạp `ResidentSession` mỗi request; principal là
+  `ResidentSession.actor()` — `AuthUser` giả (id null, không permission, chỉ tòa của cư dân, username
+  "Họ tên (cư dân SĐT)") để gọi lại service của module (đặt chỗ, yêu cầu, SOS `Source.APP`, phí) với nguyên luật
+  nghiệp vụ. `ResidentContext.requireApartment/requireOwned` kiểm tra căn thuộc cư dân (không → 404) rồi
+  `BuildingContext.select` tòa của căn. Tệp: `/resident/files` (`ResidentFileService` — chỉ tệp mình tải, ảnh tòa /
+  tiện ích / dịch vụ của tòa, ảnh căn mình, ảnh đại diện mình, tệp yêu cầu của căn mình trừ bình luận nội bộ).
+  BQL cấp / khoá / mở khoá / đặt lại / xoá tài khoản ở `/residents/{id}/app-account` (đồng bộ
+  `RESIDENT.APP_ACCOUNT_STATUS`; FE `features/resident/components/AppAccountPanel` trên trang chi tiết cư dân). Hộp thư
+  `ResidentInboxService.toApartment/toBuilding/toResidents` (chỉ cư dân có tài khoản; push sau commit qua `PushSender` →
+  Expo Push, tắt mặc định `bihome.resident-app.push-enabled`), được gọi khi: phát hành thông báo phí, ghi nhận thu tiền
+  (`FeeNoticeService.applyPayment`), đổi trạng thái / BQL bình luận công khai yêu cầu (`TicketNotifier`), duyệt / từ
+  chối lượt đặt, gửi thông báo có cư dân, nhắc nhở kênh `IN_APP`. Seed local: CD000001 Nguyễn Văn An đăng nhập
+  `0900000001` / `CuDan@123`. Mobile: `mobile/README.md` (npm, không pnpm; `npm run typecheck && npm run lint`,
+  `npx expo-doctor`; bản web `npm run web` cổng 8081 đã có trong CORS local; build bằng EAS, `eas.json`).
+- App cư dân đợt 2 (V180). Kê khai `declaration/` (`RESIDENT_DECLARATION`, mã `KK-yyMMdd-xxx`, MEMBER / VEHICLE):
+  chỉ chủ sở hữu / người thuê của căn gửi (`DeclarationService.canDeclare`); Chờ duyệt → Đã duyệt / Từ chối (bắt buộc lý
+  do) / Cư dân huỷ. Báo BQL loại `DECLARATION` (RESIDENT_WRITE cho thành viên, ASSET_WRITE cho xe — cũng là quyền duyệt).
+  Duyệt nhận bản BQL soát lại (`ApproveRequest`, trống = giữ): thành viên bắt buộc SĐT (cư dân cần SĐT duy nhất trong
+  tòa) — SĐT đã thuộc cư dân khác của tòa thì `assignApartment` thay vì tạo mới, không thì `ResidentService.create`; ảnh
+  thành viên (purpose RESIDENT_AVATAR, do cư dân tải) gán thẳng `avatarFileId` sau khi tạo. Xe → `AssetItemService.create`.
+  Kết quả về hộp thư người gửi. FE `features/declaration` (danh sách + `DeclarationDetailDialog` sửa / duyệt / từ chối).
+  `residentapp/ResidentHouseholdService` (thành viên, xe, thẻ từ của căn, loại xe, kê khai, tài liệu theo đối tượng
+  `DocumentService.listForAudiences` — Tất cả cư dân + Chủ sở hữu / Người thuê theo vai trò ở căn) và
+  `ResidentEngagementService` (khảo sát đang mở thuộc đối tượng, đặt / huỷ đơn dịch vụ). Khảo sát qua app: bảng
+  `SURVEY_PARTICIPANT` chặn trả lời hai lần kể cả ẩn danh; khảo sát ẩn danh chạy `SurveyService.submit` dưới người thao
+  tác "Cư dân (ẩn danh)" để CREATED_BY / lịch sử không lộ người trả lời; `SurveyService.respondent` nhận đối tượng
+  RESIDENT (theo `residentId`). Hộp thư thêm: phát hành khảo sát (`SURVEY`), xác nhận / hoàn thành đơn dịch vụ
+  (`SERVICE_ORDER`), kết quả kê khai (`DECLARATION`). Tệp app: thêm ảnh đại diện người cùng căn và ảnh phiếu kê khai
+  của căn. Mobile: `apartment`, `declarations/*`, `services/*`, `orders/*`, `surveys/*`, `documents`; trang chủ 8 lối
+  tắt; `components/form.tsx` (DateField dd/mm/yyyy, ChipSelect, Segmented, Stepper), `lib/pdf.openFile`.
 - Cấu hình chung: bảng một dòng `SYSTEM_SETTING` (ID = 1, tạo ở V160), `setting/SettingService.current()` giữ bản đọc
   trong bộ nhớ (làm mới sau commit khi lưu). Dùng ở: `AuthService` (số lần sai trước khi tạm khoá, số phút khoá — thay
   hằng số cũ), PDF thông báo phí / phiếu thu (dòng "Đơn vị quản lý…" + chân trang), `FeeNoticeService` (bật/tắt email
@@ -92,7 +127,7 @@ Giao diện tham khảo: màn hình "Danh sách tài liệu" (sidebar 2 tầng, 
   `/reminders/floors` và `POST /reminders/preview-recipients`, mở cho cả `SURVEY_WRITE`). `REMINDER`: NOW / ONCE /
   MONTHLY (`ReminderSchedule.nextMonthly` — tháng thiếu ngày thì lấy ngày cuối tháng), Nháp → Đã lên lịch → Đã gửi / Huỷ;
   mỗi lần gửi ghi `REMINDER_DELIVERY` (cư dân/căn hộ lưu dạng chữ, không FK) theo từng kênh. Email/SMS đi qua
-  `common/messaging/MessageSender` — hiện chỉ có `LoggingMessageSender` (ghi log); kênh Trong app lưu chờ app cư dân.
+  `common/messaging/MessageSender` — hiện chỉ có `LoggingMessageSender` (ghi log); kênh Trong app vào hộp thư app cư dân.
   `EngagementJob` (mỗi phút) gửi nhắc nhở đến hạn và đóng khảo sát hết hạn. Nội dung soạn thảo: FE
   `components/form/RichTextEditor` (contentEditable, không thư viện) + `RichTextView`; BE luôn lọc qua
   `common/messaging/RichText.sanitize` (jsoup Safelist) trước khi lưu. `SURVEY`: Nháp → Đang mở → Đã đóng; câu hỏi
@@ -113,7 +148,8 @@ Giao diện tham khảo: màn hình "Danh sách tài liệu" (sidebar 2 tầng, 
   thao tác); yêu cầu hỗ trợ gửi qua `ticket/TicketNotifier` (tạo mới → người xử lý của tòa, giao việc, đổi trạng thái,
   bình luận). Chuông header hỏi `unread-count` mỗi 30 giây. `ANNOUNCEMENT` (thuộc tòa): Nháp → Hẹn giờ
   (`AnnouncementScheduleJob` mỗi phút) → Đã gửi (không sửa/xoá được); gửi = thông báo cho nhân viên đang hoạt động được
-  gán ở tòa; cư dân chỉ được đếm (`RESIDENT_COUNT`) chờ app cư dân. Link `/announcements?view=<id>` mở xem chi tiết.
+  gán ở tòa; đối tượng có cư dân → hộp thư app cư dân (`RESIDENT_COUNT` vẫn đếm mọi cư dân). Link
+  `/announcements?view=<id>` mở xem chi tiết.
 - Vai trò & phân quyền: `RoleService` — Admin hệ thống luôn toàn quyền (không sửa được), vai trò hệ thống sửa được quyền
   nhưng không xoá, vai trò tự tạo xoá được khi chưa gán. FE ma trận module × Xem/Thêm-sửa/Xoá/Xuất (bật quyền khác tự
   bật Xem, tắt Xem tắt hết). Người dùng: `UserFormDialog` gán vai trò/tòa (Admin hệ thống không cần tòa), mật khẩu tạm
@@ -195,8 +231,6 @@ Giao diện tham khảo: màn hình "Danh sách tài liệu" (sidebar 2 tầng, 
   `idNumberMasked`. Chỉ xoá được cư dân đã chuyển đi khỏi mọi căn; căn hộ còn bản ghi cư dân (kể cả lịch sử) không xoá
   được. Cột "Chủ sở hữu" của căn hộ tính theo lô trong `ApartmentService.ownerNames` (chia IN theo 1000),
   "Thành viên" là `@Formula memberCount`; thống kê tòa ở `BuildingRepository.countResidents/countOccupiedApartments`.
-- Phase 7 còn để lại: tác vụ "Tạo tài khoản app" và trạng thái `APP_ACCOUNT_STATUS` ACTIVE/LOCKED làm cùng app cư
-  dân (hiện luôn NONE).
 - Ảnh demo (chỉ profile local, `bihome.demo-images.enabled`): `common/storage/DemoImageSeeder` lúc khởi động gắn ảnh
   chụp thật trong `resources/demo-images/<loại>/<nhóm>-<n>.jpg` (Unsplash License / randomuser.me, tải bằng
   `backend/tools/download_demo_images.py` — script ghi rõ id ảnh nguồn) cho tòa nhà / căn hộ / tiện ích / dịch vụ chưa

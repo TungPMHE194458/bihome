@@ -17,6 +17,8 @@ import com.bihome.common.web.PageResponse;
 import com.bihome.common.web.SpecificationBuilder;
 import com.bihome.notification.Announcement.Status;
 import com.bihome.notification.dto.AnnouncementDtos;
+import com.bihome.residentapp.ResidentInboxItem;
+import com.bihome.residentapp.ResidentInboxService;
 import jakarta.persistence.EntityManager;
 import java.time.Clock;
 import java.time.OffsetDateTime;
@@ -54,6 +56,7 @@ public class AnnouncementService {
     private final FileAttachmentRepository files;
     private final FileService fileService;
     private final NotificationService notificationService;
+    private final ResidentInboxService residentInbox;
     private final BuildingService buildingService;
     private final BuildingContext buildingContext;
     private final EntityManager entityManager;
@@ -195,6 +198,11 @@ public class AnnouncementService {
         }
         a.setStaffCount(staff);
         a.setResidentCount(a.getAudience().includesResidents() ? (int) buildings.countResidents(a.getBuildingId()) : 0);
+        if (a.getAudience().includesResidents()) {
+            String body = a.getContent().length() > PREVIEW ? a.getContent().substring(0, PREVIEW - 1) + "…" : a.getContent();
+            residentInbox.toBuilding(a.getBuildingId(), ResidentInboxItem.Type.ANNOUNCEMENT, a.getTitle(), body,
+                    "/inbox");
+        }
         a.setStatus(Status.SENT);
         a.setSentAt(now);
         a.setSentBy(sentBy);

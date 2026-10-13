@@ -13,6 +13,7 @@ export type NotificationType =
   | 'BOOKING_PENDING'
   | 'PAYMENT_RECEIVED'
   | 'SOS_ALERT'
+  | 'DECLARATION'
   | 'SYSTEM'
 
 export interface AppNotification {

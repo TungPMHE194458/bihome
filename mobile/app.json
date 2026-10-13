@@ -1,0 +1,66 @@
+{
+  "expo": {
+    "name": "BiHome",
+    "slug": "bihome-resident",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "scheme": "bihome",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "bundleIdentifier": "vn.bihome.resident",
+      "supportsTablet": false,
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    },
+    "android": {
+      "package": "vn.bihome.resident",
+      "adaptiveIcon": {
+        "backgroundColor": "#1F9D55",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "bundler": "metro",
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-status-bar",
+      "expo-secure-store",
+      "expo-image",
+      "expo-sharing",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/android-icon-monochrome.png",
+          "color": "#1F9D55"
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "BiHome cần truy cập ảnh để bạn đính kèm hình vào yêu cầu hỗ trợ.",
+          "cameraPermission": "BiHome cần dùng máy ảnh để bạn chụp hình đính kèm yêu cầu hỗ trợ."
+        }
+      ],
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 160,
+          "resizeMode": "contain",
+          "backgroundColor": "#FFFFFF"
+        }
+      ],
+      "expo-font"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}

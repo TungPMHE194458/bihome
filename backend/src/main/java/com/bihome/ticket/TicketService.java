@@ -254,7 +254,7 @@ public class TicketService {
             ticket.getAttachments().add(new TicketAttachment(ticket, entry.getId(), fileId));
         }
         tickets.saveAndFlush(ticket);
-        notifier.commented(ticket);
+        notifier.commented(ticket, req.visibility());
         Ticket fresh = reloaded(id);
         TicketEntry saved = entries.findById(entry.getId()).orElseThrow();
         return mapper.toEntry(saved, fresh.getAttachments(), names(Set.of(saved.getCreatedBy())));

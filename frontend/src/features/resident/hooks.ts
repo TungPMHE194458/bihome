@@ -11,6 +11,7 @@ export const residentKeys = {
   list: (params: ListParams, buildingId: number | null) => [...residentKeys.all, 'list', buildingId, params] as const,
   detail: (id: number) => [...residentKeys.all, 'detail', id] as const,
   byApartment: (apartmentId: number) => [...residentKeys.all, 'apartment', apartmentId] as const,
+  appAccount: (id: number) => [...residentKeys.all, 'app-account', id] as const,
 }
 
 export function useResidentList(params: ListParams) {
@@ -92,5 +93,25 @@ export function useImportResidents() {
     mutationFn: ({ file, stopOnError }: { file: File; stopOnError: boolean }) =>
       residentApi.importExcel(file, stopOnError),
     onSuccess: (result) => (result.imported ? invalidate() : undefined),
+  })
+}
+
+/** Tài khoản app của cư dân; chỉ gọi khi cư dân đã có tài khoản (chưa có thì API trả 404). */
+export function useAppAccount(residentId: number, enabled: boolean) {
+  return useQuery({
+    queryKey: residentKeys.appAccount(residentId),
+    queryFn: () => residentApi.appAccount(residentId),
+    enabled,
+  })
+}
+
+/** Tạo / khoá / mở khoá / đặt lại / xoá tài khoản app; làm mới chi tiết cư dân (chip trạng thái) và danh sách. */
+export function useAppAccountAction<T>(residentId: number, action: (id: number) => Promise<T>) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: () => action(residentId),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: residentKeys.all })
+    },
   })
 }

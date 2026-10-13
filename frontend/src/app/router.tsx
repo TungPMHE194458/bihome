@@ -16,6 +16,7 @@ import { LoginPage } from '@/features/auth/pages/LoginPage'
 import { ResetPasswordPage } from '@/features/auth/pages/ResetPasswordPage'
 import { BuildingDetailPage } from '@/features/building/pages/BuildingDetailPage'
 import { BuildingListPage } from '@/features/building/pages/BuildingListPage'
+import { DeclarationListPage } from '@/features/declaration/pages/DeclarationListPage'
 import { DocumentCategoryListPage } from '@/features/document/pages/DocumentCategoryListPage'
 import { DocumentListPage } from '@/features/document/pages/DocumentListPage'
 import { AnnouncementListPage } from '@/features/notification/pages/AnnouncementListPage'
@@ -82,6 +83,11 @@ const IMPLEMENTED: RouteObject[] = [
     path: 'residents/:id',
     element: <ResidentDetailPage />,
     handle: handle({ title: 'Chi tiết cư dân', permission: 'RESIDENT_READ' }),
+  },
+  {
+    path: 'declarations',
+    element: <DeclarationListPage />,
+    handle: handle({ title: 'Kê khai từ cư dân', permission: 'RESIDENT_READ' }),
   },
   {
     path: 'assets',

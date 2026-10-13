@@ -81,6 +81,12 @@ public class SosAlertService {
 
     @Transactional
     public SosDtos.Response create(SosDtos.CreateRequest req) {
+        return create(req, SosAlert.Source.MANUAL);
+    }
+
+    /** {@code APP}: cư dân bấm SOS trên app (residentapp đã kiểm tra căn hộ thuộc cư dân và chọn tòa của căn). */
+    @Transactional
+    public SosDtos.Response create(SosDtos.CreateRequest req, SosAlert.Source source) {
         Long buildingId = buildingContext.requireBuildingId();
         buildingService.requireActive(buildingId, "Tòa nhà đang không hoạt động.");
         Apartment apartment = null;
@@ -98,7 +104,7 @@ public class SosAlertService {
         a.setBuildingId(buildingId);
         a.setCode(codes.next("SOS"));
         a.setAlertType(req.alertType());
-        a.setSource(SosAlert.Source.MANUAL);
+        a.setSource(source);
         a.setApartmentId(apartment == null ? null : apartment.getId());
         a.setReporterName(trimToNull(req.reporterName()));
         a.setReporterPhone(req.reporterPhone() == null || req.reporterPhone().isBlank() ? null

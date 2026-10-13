@@ -2,6 +2,7 @@ package com.bihome.resident;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -15,6 +16,8 @@ import org.springframework.data.repository.query.Param;
 public interface ResidentRepository extends JpaRepository<Resident, Long>, JpaSpecificationExecutor<Resident> {
 
     boolean existsByBuildingIdAndPhone(Long buildingId, String phone);
+
+    Optional<Resident> findByBuildingIdAndPhone(Long buildingId, String phone);
 
     boolean existsByBuildingIdAndPhoneAndIdNot(Long buildingId, String phone, Long id);
 

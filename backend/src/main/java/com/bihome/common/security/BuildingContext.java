@@ -26,6 +26,17 @@ public class BuildingContext {
         return Optional.ofNullable((Long) attrs.getAttribute(ATTRIBUTE, RequestAttributes.SCOPE_REQUEST));
     }
 
+    /**
+     * Chỉ dùng cho app cư dân (không gửi X-Building-Id): chọn tòa của căn hộ cư dân đang thao tác, sau khi
+     * {@code residentapp.ResidentContext} đã kiểm tra căn hộ thuộc cư dân.
+     */
+    public void select(Long buildingId) {
+        RequestAttributes attrs = RequestContextHolder.getRequestAttributes();
+        if (attrs != null) {
+            attrs.setAttribute(ATTRIBUTE, buildingId, RequestAttributes.SCOPE_REQUEST);
+        }
+    }
+
     public Long requireBuildingId() {
         return selectedBuildingId().orElseThrow(() -> new BusinessException(ErrorCode.BUILDING_REQUIRED));
     }

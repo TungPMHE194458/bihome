@@ -5,12 +5,12 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HexFormat;
 
-final class TokenHashing {
+public final class TokenHashing {
 
     private TokenHashing() {
     }
 
-    static String sha256(String value) {
+    public static String sha256(String value) {
         try {
             byte[] digest = MessageDigest.getInstance("SHA-256").digest(value.getBytes(StandardCharsets.UTF_8));
             return HexFormat.of().formatHex(digest);
@@ -19,7 +19,7 @@ final class TokenHashing {
         }
     }
 
-    static boolean constantTimeEquals(String a, String b) {
+    public static boolean constantTimeEquals(String a, String b) {
         return MessageDigest.isEqual(a.getBytes(StandardCharsets.UTF_8), b.getBytes(StandardCharsets.UTF_8));
     }
 }

@@ -1,4 +1,6 @@
 import type {
+  AppAccount,
+  AppAccountPassword,
   ApartmentMember,
   LinkRequest,
   ResidentDetail,
@@ -27,6 +29,14 @@ export const residentApi = {
   moveOut: (id: number, body: { moveOutDate: string; linkIds?: number[] }) =>
     http.post<ResidentDetail>(`/residents/${id}/move-out`, body).then((r) => r.data),
   remove: (id: number) => http.delete<void>(`/residents/${id}`),
+  appAccount: (id: number) => http.get<AppAccount>(`/residents/${id}/app-account`).then((r) => r.data),
+  createAppAccount: (id: number) =>
+    http.post<AppAccountPassword>(`/residents/${id}/app-account`).then((r) => r.data),
+  lockAppAccount: (id: number) => http.post<AppAccount>(`/residents/${id}/app-account/lock`).then((r) => r.data),
+  unlockAppAccount: (id: number) => http.post<AppAccount>(`/residents/${id}/app-account/unlock`).then((r) => r.data),
+  resetAppPassword: (id: number) =>
+    http.post<AppAccountPassword>(`/residents/${id}/app-account/reset-password`).then((r) => r.data),
+  deleteAppAccount: (id: number) => http.delete<void>(`/residents/${id}/app-account`),
   exportExcel: (params: ListParams) => {
     const filters = Object.fromEntries(Object.entries(params).filter(([k]) => !['page', 'size', 'sort'].includes(k)))
     return downloadFromApi('/residents/export', filters, 'cu-dan.xlsx')

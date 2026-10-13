@@ -14,23 +14,26 @@ import com.bihome.common.web.PageResponse;
 import com.bihome.common.web.SpecificationBuilder;
 import com.bihome.resident.Resident;
 import com.bihome.resident.ResidentRepository;
+import com.bihome.residentapp.ResidentInboxItem;
+import com.bihome.residentapp.ResidentInboxService;
 import com.bihome.servicecatalog.ServiceOrder.Status;
 import com.bihome.servicecatalog.dto.ServiceOrderDtos;
-import com.bihome.transaction.FinancialTransaction;
 import com.bihome.transaction.FinancialTransaction.Method;
 import com.bihome.transaction.FinancialTransaction.SourceType;
+import com.bihome.transaction.FinancialTransaction;
 import com.bihome.transaction.TransactionService;
 import com.bihome.transaction.dto.TransactionDtos;
 import com.bihome.voucher.Voucher.ApplyScope;
-import com.bihome.voucher.VoucherRedemptionService;
 import com.bihome.voucher.VoucherRedemptionService.Redemption;
 import com.bihome.voucher.VoucherRedemptionService.Target;
+import com.bihome.voucher.VoucherRedemptionService;
 import jakarta.persistence.EntityManager;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -61,6 +64,7 @@ public class ServiceOrderService {
     private final BuildingService buildingService;
     private final DailyCodeGenerator codes;
     private final TransactionService transactionService;
+    private final ResidentInboxService residentInbox;
     private final VoucherRedemptionService voucherService;
     private final EntityManager entityManager;
     private final Clock clock;
@@ -125,6 +129,7 @@ public class ServiceOrderService {
         }
         o.setStatus(Status.CONFIRMED);
         orders.saveAndFlush(o);
+        notifyResident(o, "Đơn dịch vụ " + o.getCode() + " đã được xác nhận");
         return get(id);
     }
 
@@ -137,7 +142,18 @@ public class ServiceOrderService {
         o.setStatus(Status.COMPLETED);
         o.setCompletedAt(OffsetDateTime.now(clock));
         orders.saveAndFlush(o);
+        notifyResident(o, "Đơn dịch vụ " + o.getCode() + " đã hoàn thành");
         return get(id);
+    }
+
+    /** Hộp thư app: cư dân đặt đơn (nếu có), không thì cư dân có tài khoản đang ở căn. */
+    private void notifyResident(ServiceOrder o, String title) {
+        String link = "/orders/" + o.getId();
+        if (o.getResidentId() != null) {
+            residentInbox.toResidents(List.of(o.getResidentId()), ResidentInboxItem.Type.SERVICE_ORDER, title, null, link);
+        } else {
+            residentInbox.toApartment(o.getApartmentId(), ResidentInboxItem.Type.SERVICE_ORDER, title, null, link);
+        }
     }
 
     @Transactional

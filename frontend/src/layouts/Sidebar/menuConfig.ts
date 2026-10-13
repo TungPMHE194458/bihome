@@ -50,6 +50,7 @@ export const MENU: MenuSection[] = [
           { label: 'Căn hộ', path: '/apartments', permission: 'APARTMENT_READ' },
           { label: 'Hạng mục căn hộ', path: '/assets', permission: 'ASSET_READ' },
           { label: 'Cư dân', path: '/residents', permission: 'RESIDENT_READ' },
+          { label: 'Kê khai từ cư dân', path: '/declarations', permission: 'RESIDENT_READ' },
           { label: 'Voucher', path: '/vouchers', permission: 'VOUCHER_READ' },
           { label: 'Thẻ từ', path: '/access-cards', permission: 'ACCESS_CARD_READ' },
           { label: 'Nhắc nhở', path: '/reminders', permission: 'REMINDER_READ' },
