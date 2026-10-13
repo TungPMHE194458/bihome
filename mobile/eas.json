@@ -14,6 +14,10 @@
       "android": { "buildType": "apk" },
       "env": { "EXPO_PUBLIC_API_URL": "https://staging-api.bihome.vn" }
     },
+    "demo": {
+      "extends": "preview",
+      "env": { "EXPO_PUBLIC_API_URL": "https://respective-management-departmental-resumes.trycloudflare.com" }
+    },
     "production": {
       "autoIncrement": true,
       "env": { "EXPO_PUBLIC_API_URL": "https://api.bihome.vn" }
