@@ -1,8 +1,8 @@
 import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
-import { Switch, Text, View } from 'react-native'
+import { Text, View } from 'react-native'
 import { DateInput, SearchPicker } from '@/components/form'
-import { Button, TextField } from '@/components/ui'
+import { Button, SwitchRow, TextField } from '@/components/ui'
 import { errorMessage, fieldErrors } from '@/lib/api'
 import { apartmentApi } from '@/lib/api/apartment'
 import { ASSET_STATUS, willBeInactive } from '@/lib/constants'
@@ -122,10 +122,7 @@ export function AssetItemForm({ item, onSaved }: { item?: AssetItem; onSaved: (i
         </Text>
       )}
       <TextField label="Mô tả" value={description} onChangeText={setDescription} multiline />
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-        <Switch value={active} onValueChange={setActive} trackColor={{ true: colors.primary }} />
-        <Text style={{ color: colors.text }}>{active ? ASSET_STATUS.ACTIVE.label : ASSET_STATUS.INACTIVE.label}</Text>
-      </View>
+      <SwitchRow label={active ? ASSET_STATUS.ACTIVE.label : ASSET_STATUS.INACTIVE.label} value={active} onValueChange={setActive} />
       <Button title={item ? 'Lưu thay đổi' : 'Thêm hạng mục'} onPress={() => void submit()} loading={saving} />
     </View>
   )

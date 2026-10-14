@@ -1,8 +1,8 @@
 import { useState } from 'react'
-import { Switch, Text, View } from 'react-native'
+import { Text, View } from 'react-native'
 import { ChipSelect, DateInput, SearchPicker } from '@/components/form'
 import { PhotoPicker, type UploadedPhoto } from '@/components/PhotoPicker'
-import { Button, TextField } from '@/components/ui'
+import { Button, SwitchRow, TextField } from '@/components/ui'
 import { apartmentApi } from '@/lib/api/apartment'
 import { errorMessage, fieldErrors } from '@/lib/api'
 import { DEFAULT_NATIONALITY, GENDER, ID_TYPE, RELATIONSHIP, RESIDENT_ROLE } from '@/lib/constants'
@@ -135,10 +135,7 @@ export function ResidentForm({ resident, onSaved }: { resident?: ResidentDetail;
           <ChipSelect label="Vai trò" required options={ROLE_OPTIONS} value={role} onChange={(v) => v && setRole(v)} />
           <ChipSelect label="Quan hệ với chủ hộ" options={RELATIONSHIP_OPTIONS} value={relationship} onChange={setRelationship} />
           {role === 'OWNER' && (
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-              <Switch value={householdHead} onValueChange={setHouseholdHead} trackColor={{ true: colors.primary }} />
-              <Text style={{ color: colors.text }}>Là chủ hộ chính</Text>
-            </View>
+            <SwitchRow label="Là chủ hộ chính" value={householdHead} onValueChange={setHouseholdHead} />
           )}
           <DateInput label="Ngày vào ở *" value={moveInDate} onChange={setMoveInDate} error={errors.moveInDate} />
         </>

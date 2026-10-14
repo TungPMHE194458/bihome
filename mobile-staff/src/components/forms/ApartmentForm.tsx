@@ -1,8 +1,8 @@
 import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
-import { Switch, Text, View } from 'react-native'
+import { Text, View } from 'react-native'
 import { ChipSelect } from '@/components/form'
-import { Button, TextField } from '@/components/ui'
+import { Button, SwitchRow, TextField } from '@/components/ui'
 import { errorMessage, fieldErrors } from '@/lib/api'
 import { useAuth } from '@/lib/auth'
 import { APARTMENT_STATUS, APARTMENT_TYPE, OWNERSHIP_TYPE, USAGE_STATUS } from '@/lib/constants'
@@ -99,10 +99,7 @@ export function ApartmentForm({ apartment, onSaved }: { apartment?: ApartmentDet
       <ChipSelect label="Hình thức" required options={OWNERSHIP_OPTIONS} value={ownershipType} onChange={(v) => v && setOwnershipType(v)} />
       <ChipSelect label="Tình trạng sử dụng" required options={USAGE_OPTIONS} value={usageStatus} onChange={(v) => v && setUsageStatus(v)} />
       <TextField label="Mô tả" value={description} onChangeText={setDescription} multiline />
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-        <Switch value={active} onValueChange={setActive} trackColor={{ true: colors.primary }} />
-        <Text style={{ color: colors.text }}>{active ? APARTMENT_STATUS.ACTIVE.label : APARTMENT_STATUS.INACTIVE.label}</Text>
-      </View>
+      <SwitchRow label={active ? APARTMENT_STATUS.ACTIVE.label : APARTMENT_STATUS.INACTIVE.label} value={active} onValueChange={setActive} />
       <Button title={apartment ? 'Lưu thay đổi' : 'Thêm căn hộ'} onPress={() => void submit()} loading={saving} />
     </View>
   )

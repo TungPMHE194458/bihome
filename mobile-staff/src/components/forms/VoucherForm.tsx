@@ -1,8 +1,8 @@
 import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
-import { Pressable, StyleSheet, Switch, Text, View } from 'react-native'
+import { Pressable, StyleSheet, Text, View } from 'react-native'
 import { ChipSelect, DateInput } from '@/components/form'
-import { Button, Icon, TextField } from '@/components/ui'
+import { Button, Icon, SwitchRow, TextField } from '@/components/ui'
 import { amenityApi } from '@/lib/api/amenity'
 import { serviceApi } from '@/lib/api/service'
 import { errorMessage, fieldErrors } from '@/lib/api'
@@ -127,10 +127,7 @@ export function VoucherForm({ voucher, onSaved }: { voucher?: Voucher; onSaved: 
       <TextField label="Giới hạn mỗi căn" value={perApartmentLimit} onChangeText={(t) => setPerApartmentLimit(t.replace(/\D/g, ''))} keyboardType="number-pad" placeholder="Bỏ trống = không giới hạn" error={errors.perApartmentLimit} />
       <DateInput label="Hiệu lực từ *" value={validFrom} onChange={setValidFrom} />
       <DateInput label="Hiệu lực đến *" value={validTo} onChange={setValidTo} error={errors.validTo} />
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-        <Switch value={active} onValueChange={setActive} trackColor={{ true: colors.primary }} />
-        <Text style={{ color: colors.text }}>{active ? VOUCHER_STATUS.ACTIVE.label : VOUCHER_STATUS.INACTIVE.label}</Text>
-      </View>
+      <SwitchRow label={active ? VOUCHER_STATUS.ACTIVE.label : VOUCHER_STATUS.INACTIVE.label} value={active} onValueChange={setActive} />
       <Button title={voucher ? 'Lưu thay đổi' : 'Thêm voucher'} onPress={() => void submit()} loading={saving} />
     </View>
   )

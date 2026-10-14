@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { Switch, Text, View } from 'react-native'
-import { Button, TextField } from '@/components/ui'
+import { Text, View } from 'react-native'
+import { Button, SwitchRow, TextField } from '@/components/ui'
 import { errorMessage, fieldErrors } from '@/lib/api'
 import { useAuth } from '@/lib/auth'
 import { ASSET_STATUS, ASSET_UNIT_SUGGESTIONS } from '@/lib/constants'
@@ -61,10 +61,7 @@ export function AssetCategoryForm({ category, onSaved }: { category?: AssetCateg
         placeholder={ASSET_UNIT_SUGGESTIONS.join(', ')}
       />
       <TextField label="Mô tả" value={description} onChangeText={setDescription} multiline />
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-        <Switch value={active} onValueChange={setActive} trackColor={{ true: colors.primary }} />
-        <Text style={{ color: colors.text }}>{active ? ASSET_STATUS.ACTIVE.label : ASSET_STATUS.INACTIVE.label}</Text>
-      </View>
+      <SwitchRow label={active ? ASSET_STATUS.ACTIVE.label : ASSET_STATUS.INACTIVE.label} value={active} onValueChange={setActive} />
       <Button title={category ? 'Lưu thay đổi' : 'Thêm danh mục'} onPress={() => void submit()} loading={saving} />
     </View>
   )

@@ -6,6 +6,7 @@ import {
   Platform,
   Pressable,
   StyleSheet,
+  Switch,
   Text,
   TextInput,
   View,
@@ -148,6 +149,22 @@ export function Row({ label, value, strong }: { label: string; value: ReactNode;
   )
 }
 
+/** Công tắc + nhãn — cả dòng bấm được, không chỉ riêng công tắc (dễ bấm trúng hơn trên điện thoại). */
+export function SwitchRow({ label, value, onValueChange, disabled }: { label: string; value: boolean; onValueChange: (v: boolean) => void; disabled?: boolean }) {
+  return (
+    <Pressable
+      onPress={() => !disabled && onValueChange(!value)}
+      style={styles.switchRow}
+      accessibilityRole="switch"
+      accessibilityState={{ checked: value, disabled }}
+      accessibilityLabel={label}
+    >
+      <Switch value={value} onValueChange={onValueChange} trackColor={{ true: colors.primary }} disabled={disabled} />
+      <Text style={[styles.switchLabel, disabled && { color: colors.textMuted }]}>{label}</Text>
+    </Pressable>
+  )
+}
+
 export function Loading() {
   return (
     <View style={styles.center}>
@@ -226,6 +243,8 @@ export const styles = StyleSheet.create({
   sectionRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 8 },
   sectionTitle: { fontSize: 17, fontWeight: '700', color: colors.text },
   row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 12, paddingVertical: 6 },
+  switchRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 4 },
+  switchLabel: { flex: 1, color: colors.text, fontSize: 15 },
   rowLabel: { color: colors.textMuted, fontSize: 14 },
   rowValue: { color: colors.text, fontSize: 14, fontWeight: '500', flexShrink: 1, textAlign: 'right' },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 8 },

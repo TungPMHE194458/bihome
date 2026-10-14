@@ -1,8 +1,8 @@
 import { useState } from 'react'
-import { Switch, Text, View } from 'react-native'
+import { Text, View } from 'react-native'
 import { ChipSelect, SearchPicker } from '@/components/form'
 import { PhotoPicker, type UploadedPhoto } from '@/components/PhotoPicker'
-import { Button, TextField } from '@/components/ui'
+import { Button, SwitchRow, TextField } from '@/components/ui'
 import { errorMessage, fieldErrors } from '@/lib/api'
 import { BUILDING_STATUS, BUILDING_TYPE, VN_PROVINCES } from '@/lib/constants'
 import { buildingApi } from '@/lib/staff'
@@ -112,10 +112,7 @@ export function BuildingForm({ building, onSaved }: { building?: BuildingDetail;
       <TextField label="Hotline" value={hotline} onChangeText={setHotline} keyboardType="phone-pad" />
       <TextField label="Email quản lý" value={managementEmail} onChangeText={setManagementEmail} keyboardType="email-address" autoCapitalize="none" />
       <TextField label="Mô tả" value={description} onChangeText={setDescription} multiline />
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-        <Switch value={active} onValueChange={setActive} trackColor={{ true: colors.primary }} />
-        <Text style={{ color: colors.text }}>{active ? BUILDING_STATUS.ACTIVE.label : BUILDING_STATUS.INACTIVE.label}</Text>
-      </View>
+      <SwitchRow label={active ? BUILDING_STATUS.ACTIVE.label : BUILDING_STATUS.INACTIVE.label} value={active} onValueChange={setActive} />
       <Button title={building ? 'Lưu thay đổi' : 'Thêm tòa nhà'} onPress={() => void submit()} loading={saving} />
     </View>
   )

@@ -1,7 +1,7 @@
 import { useState } from 'react'
-import { Modal, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native'
+import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
 import { ChipSelect, DateInput, SearchPicker } from '@/components/form'
-import { Button } from '@/components/ui'
+import { Button, SwitchRow } from '@/components/ui'
 import { apartmentApi } from '@/lib/api/apartment'
 import { errorMessage, fieldErrors } from '@/lib/api'
 import { ACTIVE_RESIDENCE_STATUSES, RELATIONSHIP, RESIDENCE_STATUS, RESIDENT_ROLE } from '@/lib/constants'
@@ -98,20 +98,14 @@ export function ResidenceLinkModal({
         <ChipSelect label="Vai trò" required options={ROLE_OPTIONS} value={role} onChange={(v) => v && setRole(v)} />
         <ChipSelect label="Quan hệ với chủ hộ" options={RELATIONSHIP_OPTIONS} value={relationship} onChange={setRelationship} />
         {role === 'OWNER' && (
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-            <Switch value={householdHead} onValueChange={setHouseholdHead} trackColor={{ true: colors.primary }} />
-            <Text style={{ color: colors.text }}>Là chủ hộ chính</Text>
-          </View>
+          <SwitchRow label="Là chủ hộ chính" value={householdHead} onValueChange={setHouseholdHead} />
         )}
         <DateInput label="Ngày vào ở *" value={moveInDate} onChange={setMoveInDate} error={errors.moveInDate} />
         {link && <DateInput label="Ngày chuyển đi" value={moveOutDate} onChange={setMoveOutDate} error={errors.moveOutDate} />}
         {(!moveOutDate || moveOutDate > new Date().toISOString().slice(0, 10)) && (
           <ChipSelect label="Tình trạng" required options={STATUS_OPTIONS} value={status} onChange={(v) => v && setStatus(v)} />
         )}
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-          <Switch value={tempRegistered} onValueChange={setTempRegistered} trackColor={{ true: colors.primary }} />
-          <Text style={{ color: colors.text }}>Đã đăng ký tạm trú</Text>
-        </View>
+        <SwitchRow label="Đã đăng ký tạm trú" value={tempRegistered} onValueChange={setTempRegistered} />
         <Button title={link ? 'Lưu thay đổi' : 'Gán căn hộ'} onPress={() => void submit()} loading={saving} />
       </ScrollView>
     </Modal>

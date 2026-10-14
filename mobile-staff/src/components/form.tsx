@@ -228,6 +228,53 @@ const dateStyles = StyleSheet.create({
   text: { fontSize: 16, color: colors.text },
 })
 
+/** Chọn giờ (HH:mm). Web gõ trực tiếp theo mẫu; điện thoại mở picker gốc. */
+export function TimeInput({ label, value, onChange, error }: { label: string; value?: string; onChange: (v: string | undefined) => void; error?: string }) {
+  const [open, setOpen] = useState(false)
+  if (Platform.OS === 'web') {
+    return (
+      <TextField
+        label={label}
+        value={value ?? ''}
+        onChangeText={(t) => {
+          const digits = t.replace(/\D/g, '').slice(0, 4)
+          const formatted = digits.length > 2 ? `${digits.slice(0, 2)}:${digits.slice(2)}` : digits
+          onChange(formatted || undefined)
+        }}
+        placeholder="hh:mm"
+        keyboardType="number-pad"
+        maxLength={5}
+        error={error}
+      />
+    )
+  }
+  const [h, m] = (value ?? '08:00').split(':').map(Number)
+  const date = new Date()
+  date.setHours(h || 0, m || 0, 0, 0)
+  return (
+    <View style={{ gap: 6 }}>
+      <Text style={styles.label}>{label}</Text>
+      <Pressable onPress={() => setOpen(true)} style={[dateStyles.field, error ? { borderColor: colors.danger } : null]} accessibilityLabel={label}>
+        <Icon name="clock-outline" size={18} color={colors.textMuted} />
+        <Text style={[dateStyles.text, !value && { color: colors.textMuted }]}>{value ?? 'Chọn giờ'}</Text>
+      </Pressable>
+      {error ? <Text style={styles.error}>{error}</Text> : null}
+      {open && (
+        <DateTimePicker
+          value={date}
+          mode="time"
+          display="default"
+          onChange={(event, picked) => {
+            setOpen(false)
+            if (event.type === 'dismissed' || !picked) return
+            onChange(`${String(picked.getHours()).padStart(2, '0')}:${String(picked.getMinutes()).padStart(2, '0')}`)
+          }}
+        />
+      )}
+    </View>
+  )
+}
+
 // ------------------------------------------------------------ Tìm & chọn (modal)
 
 export interface PickerOption<T> {
@@ -407,4 +454,140 @@ const pickerStyles = StyleSheet.create({
   rowLabel: { fontSize: 15, color: colors.text },
   rowSub: { fontSize: 13, color: colors.textMuted, marginTop: 2 },
   empty: { textAlign: 'center', color: colors.textMuted, marginTop: 32 },
+})
+
+// ------------------------------------------------------------ Tìm & chọn nhiều (modal)
+
+/**
+ * Như {@link SearchPicker} nhưng chọn nhiều — dùng cho đối tượng nhận nhắc nhở/khảo sát (căn hộ/cư dân cụ thể).
+ * `selected` là danh sách {@link PickerOption} đã chọn (giữ nhãn kể cả khi không còn trong kết quả tìm gần nhất).
+ */
+export function MultiSearchPicker<T extends string | number>({
+  label,
+  selected,
+  onSearch,
+  onChange,
+  error,
+  placeholder = 'Tìm kiếm…',
+}: {
+  label: string
+  selected: PickerOption<T>[]
+  onSearch: (keyword: string) => Promise<PickerOption<T>[]>
+  onChange: (v: PickerOption<T>[]) => void
+  error?: string
+  placeholder?: string
+}) {
+  const [visible, setVisible] = useState(false)
+  const [keyword, setKeyword] = useState('')
+  const [results, setResults] = useState<PickerOption<T>[]>([])
+  const [loading, setLoading] = useState(false)
+
+  const search = async (text: string) => {
+    setKeyword(text)
+    setLoading(true)
+    try {
+      setResults(await onSearch(text))
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const openModal = () => {
+    setVisible(true)
+    setKeyword('')
+    void search('')
+  }
+
+  const toggle = (option: PickerOption<T>) => {
+    const exists = selected.some((s) => s.value === option.value)
+    onChange(exists ? selected.filter((s) => s.value !== option.value) : [...selected, option])
+  }
+
+  return (
+    <View style={{ gap: 6 }}>
+      <Text style={styles.label}>{label}</Text>
+      <Pressable onPress={openModal} style={[pickerStyles.field, error ? { borderColor: colors.danger } : null]} accessibilityLabel={label} accessibilityRole="button">
+        <Text style={[pickerStyles.text, !selected.length && { color: colors.textMuted }]} numberOfLines={1}>
+          {selected.length ? `Đã chọn ${selected.length}` : placeholder}
+        </Text>
+        <Icon name="chevron-down" size={18} color={colors.textMuted} />
+      </Pressable>
+      {selected.length > 0 && (
+        <View style={multiStyles.chips}>
+          {selected.map((s) => (
+            <Pressable key={String(s.value)} onPress={() => toggle(s)} style={multiStyles.chip}>
+              <Text style={multiStyles.chipText} numberOfLines={1}>
+                {s.label}
+              </Text>
+              <Icon name="close" size={14} color={colors.primaryDark} />
+            </Pressable>
+          ))}
+        </View>
+      )}
+      {error ? <Text style={styles.error}>{error}</Text> : null}
+
+      <Modal visible={visible} animationType="slide" onRequestClose={() => setVisible(false)}>
+        <View style={pickerStyles.modal}>
+          <View style={pickerStyles.modalHeader}>
+            <Pressable onPress={() => setVisible(false)} hitSlop={10} accessibilityLabel="Đóng">
+              <Icon name="close" size={24} color={colors.text} />
+            </Pressable>
+            <Text style={pickerStyles.modalTitle}>
+              {label} {selected.length ? `(${selected.length})` : ''}
+            </Text>
+            <View style={{ width: 24 }} />
+          </View>
+          <TextInput
+            style={pickerStyles.search}
+            placeholder={placeholder}
+            placeholderTextColor={colors.textMuted}
+            value={keyword}
+            onChangeText={(t) => void search(t)}
+            autoFocus
+          />
+          {loading ? (
+            <ActivityIndicator style={{ marginTop: 24 }} color={colors.primary} />
+          ) : (
+            <FlatList
+              data={results}
+              keyExtractor={(o) => String(o.value)}
+              keyboardShouldPersistTaps="handled"
+              renderItem={({ item }) => {
+                const checked = selected.some((s) => s.value === item.value)
+                return (
+                  <Pressable onPress={() => toggle(item)} style={pickerStyles.row}>
+                    <Icon name={checked ? 'checkbox-marked' : 'checkbox-blank-outline'} size={22} color={checked ? colors.primary : colors.textMuted} />
+                    <View style={{ flex: 1, marginLeft: 10 }}>
+                      <Text style={pickerStyles.rowLabel}>{item.label}</Text>
+                      {item.sublabel ? <Text style={pickerStyles.rowSub}>{item.sublabel}</Text> : null}
+                    </View>
+                  </Pressable>
+                )
+              }}
+              ListEmptyComponent={<Text style={pickerStyles.empty}>Không tìm thấy kết quả.</Text>}
+            />
+          )}
+          <View style={multiStyles.doneBar}>
+            <Button title={`Xong (${selected.length})`} onPress={() => setVisible(false)} />
+          </View>
+        </View>
+      </Modal>
+    </View>
+  )
+}
+
+const multiStyles = StyleSheet.create({
+  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  chip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: colors.primaryLight,
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    maxWidth: '100%',
+  },
+  chipText: { color: colors.primaryDark, fontWeight: '600', fontSize: 13, flexShrink: 1 },
+  doneBar: { padding: 16, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border, backgroundColor: colors.card },
 })
