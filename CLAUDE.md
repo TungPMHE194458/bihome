@@ -18,7 +18,7 @@ Giao diện tham khảo: màn hình "Danh sách tài liệu" (sidebar 2 tầng, 
   `excel/`, `messaging/`, `pdf/`), `auth/`, `user/`, `building/`, `apartment/`, `asset/`, `resident/`, `document/`,
   `ticket/`, `accesscard/`, `voucher/`, `amenity/`, `servicecatalog/`, `booking/`, `transaction/`, `amenityreport/`,
   `audit/`, `notification/`, `dashboard/`, `reminder/`, `survey/`, `feerate/`, `meter/`, `feenotice/`, `payment/`,
-  `vietqr/`, `sos/`, `setting/`, `residentapp/`, `declaration/`, migration V001–V003, V010–V180 +
+  `vietqr/`, `sos/`, `setting/`, `residentapp/`, `declaration/`, migration V001–V003, V010–V190 +
   seed local (admin, 4 tòa, 34 căn hộ, xe, 8 cư dân, 6 yêu cầu, 7 thẻ từ, 4 voucher, 3 tiện ích và 4 dịch vụ mẫu ở
   SKY01, 6 đăng ký tiện ích, 2 đơn dịch vụ và giao dịch mẫu, 2 nhắc nhở, 2 khảo sát (1 đang mở có 3 phản hồi), đơn giá +
   tài khoản VietQR giả + chỉ số điện / nước 2 kỳ trước tháng chạy seed của mọi căn SKY01 (A0203 tăng bất thường), 1
@@ -34,7 +34,7 @@ Giao diện tham khảo: màn hình "Danh sách tài liệu" (sidebar 2 tầng, 
   giá** (`/fee-rates`, thêm vào menu Thông báo phí), **Lịch sử thanh toán**, **Thanh toán tự động (VietQR)**, **Cảnh báo
   SOS** (`/sos-alerts`, menu Yêu cầu và hỗ trợ + nút SOS header), **Cấu hình chung** (`/settings/general`), **Kê khai từ
   cư dân** (`/declarations`, menu Quản lý tòa nhà). Chi tiết
-  căn hộ đã có đủ tab. README.md ở gốc repo. **App cư dân** (`mobile/`, Expo SDK 57) — xem mục bên dưới. Chưa làm:
+  căn hộ đã có đủ tab. README.md ở gốc repo. **App cư dân** (`mobile/`, Expo SDK 57) và **app nhân viên** (`mobile-staff/`) — xem mục bên dưới. Chưa làm:
   nhà cung cấp email / SMS thật (OTP quên mật khẩu app → liên hệ BQL), danh mục phường/xã theo tỉnh (Phường/Xã nhập tay),
   hạ tầng production (`docs/MOBILE_PLAN.md`). Mục "Dự án": không làm.
 - App cư dân: backend `residentapp/` (V170: `RESIDENT_ACCOUNT` đăng nhập bằng SĐT duy nhất toàn hệ thống,
@@ -54,6 +54,18 @@ Giao diện tham khảo: màn hình "Danh sách tài liệu" (sidebar 2 tầng, 
   chối lượt đặt, gửi thông báo có cư dân, nhắc nhở kênh `IN_APP`. Seed local: CD000001 Nguyễn Văn An đăng nhập
   `0900000001` / `CuDan@123`. Mobile: `mobile/README.md` (npm, không pnpm; `npm run typecheck && npm run lint`,
   `npx expo-doctor`; bản web `npm run web` cổng 8081 đã có trong CORS local; build bằng EAS, `eas.json`).
+- App nhân viên "BiHome Quản lý" (`mobile-staff/`, Expo SDK 57, bundle `vn.bihome.staff`, web dev cổng 8082): gọi
+  chung API BQL `/api/v1/**`, menu ẩn theo permission. Đăng nhập mobile: header `X-Client-Type: mobile` → `AuthController`
+  trả `refreshToken` trong body (`TokenResponse.withRefreshToken`, web không có trường này) và không đặt cookie; refresh
+  / logout / change-password đọc token từ header `X-Refresh-Token` trước, rồi cookie (CORS cho phép hai header này).
+  Push nhân viên (V190 `USER_PUSH_TOKEN`, `POST/DELETE /notifications/push-tokens/{token}`): `NotificationService.notify`
+  đẩy tới thiết bị người nhận sau commit qua `residentapp/PushSender` (dùng chung cờ `bihome.resident-app.push-enabled`;
+  token DeviceNotRegistered bị xoá ở cả hai bảng). App: Tổng quan (dashboard, SOS, việc chờ duyệt, việc của tôi), Yêu
+  cầu (lọc / nhận việc / giao / đổi trạng thái / bình luận nội bộ-công khai kèm ảnh), SOS (hỏi `/sos-alerts/active` 15
+  giây, rung khi có mới), Duyệt (đăng ký tiện ích, kê khai — duyệt nguyên bản + SĐT, đơn dịch vụ), Ghi chỉ số theo tầng
+  (`/meter-readings/sheet`), Tra cứu cư dân / căn hộ / xe. Danh sách gọi API luôn `size` 10/20/50. Link thông báo của
+  web (vd `/sos-alerts?view=`) đổi sang màn hình app ở `lib/push.routeForLink`. Kiểm tra: `npm run typecheck && npm run
+  lint`, `npx expo-doctor`.
 - App cư dân đợt 2 (V180). Kê khai `declaration/` (`RESIDENT_DECLARATION`, mã `KK-yyMMdd-xxx`, MEMBER / VEHICLE):
   chỉ chủ sở hữu / người thuê của căn gửi (`DeclarationService.canDeclare`); Chờ duyệt → Đã duyệt / Từ chối (bắt buộc lý
   do) / Cư dân huỷ. Báo BQL loại `DECLARATION` (RESIDENT_WRITE cho thành viên, ASSET_WRITE cho xe — cũng là quyền duyệt).

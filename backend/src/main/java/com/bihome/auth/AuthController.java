@@ -29,22 +29,27 @@ public class AuthController {
     private final ProfileService profileService;
     private final RefreshTokenCookies cookies;
 
+    /** App nhân viên gửi {@code X-Client-Type: mobile} ở mọi request tới /auth. */
+    static final String CLIENT_HEADER = "X-Client-Type";
+    static final String REFRESH_HEADER = "X-Refresh-Token";
+
     @Operation(summary = "Đăng nhập", description = "Bằng tên đăng nhập hoặc email. Sai 5 lần liên tiếp → khoá 15 phút.")
     @PostMapping("/login")
     public ResponseEntity<TokenResponse> login(@Valid @RequestBody AuthRequests.Login request, HttpServletRequest http) {
-        return withRefreshCookie(authService.login(request, ClientInfo.from(http)));
+        return withRefreshCookie(authService.login(request, ClientInfo.from(http)), http);
     }
 
-    @Operation(summary = "Làm mới access token", description = "Dùng refresh token trong cookie; token được xoay vòng mỗi lần gọi.")
+    @Operation(summary = "Làm mới access token", description = "Dùng refresh token trong cookie (web) hoặc header "
+            + "X-Refresh-Token (app mobile); token được xoay vòng mỗi lần gọi.")
     @PostMapping("/refresh")
     public ResponseEntity<TokenResponse> refresh(HttpServletRequest http) {
-        return withRefreshCookie(authService.refresh(cookies.read(http), ClientInfo.from(http)));
+        return withRefreshCookie(authService.refresh(refreshToken(http), ClientInfo.from(http)), http);
     }
 
     @Operation(summary = "Đăng xuất")
     @PostMapping("/logout")
     public ResponseEntity<Void> logout(HttpServletRequest http) {
-        authService.logout(cookies.read(http));
+        authService.logout(refreshToken(http));
         return ResponseEntity.noContent().header(HttpHeaders.SET_COOKIE, cookies.clear().toString()).build();
     }
 
@@ -67,7 +72,8 @@ public class AuthController {
     public ResponseEntity<TokenResponse> changePassword(@AuthenticationPrincipal AuthUser me,
                                                         @Valid @RequestBody AuthRequests.ChangePassword request,
                                                         HttpServletRequest http) {
-        return withRefreshCookie(authService.changePassword(me, request, cookies.read(http), ClientInfo.from(http)));
+        return withRefreshCookie(
+                authService.changePassword(me, request, refreshToken(http), ClientInfo.from(http)), http);
     }
 
     @Operation(summary = "Thông tin người dùng hiện tại", description = "Gồm hồ sơ, vai trò, quyền và tòa nhà được gán.")
@@ -76,9 +82,22 @@ public class AuthController {
         return profileService.get(me);
     }
 
-    private ResponseEntity<TokenResponse> withRefreshCookie(AuthService.LoginResult result) {
+    /** App mobile không dùng cookie: nhận refresh token trong body và gửi lại qua header {@link #REFRESH_HEADER}. */
+    private ResponseEntity<TokenResponse> withRefreshCookie(AuthService.LoginResult result, HttpServletRequest http) {
+        if (isMobile(http)) {
+            return ResponseEntity.ok().body(result.tokens().withRefreshToken(result.refreshToken()));
+        }
         return ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE, cookies.build(result.refreshToken(), result.rememberMe()).toString())
                 .body(result.tokens());
+    }
+
+    private static boolean isMobile(HttpServletRequest http) {
+        return "mobile".equalsIgnoreCase(http.getHeader(CLIENT_HEADER));
+    }
+
+    private String refreshToken(HttpServletRequest http) {
+        String header = http.getHeader(REFRESH_HEADER);
+        return header != null && !header.isBlank() ? header.trim() : cookies.read(http);
     }
 }

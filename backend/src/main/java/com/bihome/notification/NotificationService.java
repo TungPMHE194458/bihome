@@ -6,6 +6,7 @@ import com.bihome.common.security.CurrentUser;
 import com.bihome.common.web.PageParams;
 import com.bihome.common.web.PageResponse;
 import com.bihome.notification.dto.NotificationDtos;
+import com.bihome.residentapp.PushSender;
 import java.time.Clock;
 import java.time.OffsetDateTime;
 import java.util.Collection;
@@ -18,8 +19,13 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
-/** Thông báo trong hệ thống: tạo cho người nhận (bỏ qua chính người thao tác) và đọc của người đang đăng nhập. */
+/**
+ * Thông báo trong hệ thống: tạo cho người nhận (bỏ qua chính người thao tác) và đọc của người đang đăng nhập. Người
+ * nhận có cài app nhân viên được đẩy thêm push sau khi commit.
+ */
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -28,6 +34,8 @@ public class NotificationService {
     private static final int MAX_BODY = 1000;
 
     private final NotificationRepository notifications;
+    private final UserPushTokenRepository pushTokens;
+    private final PushSender pushSender;
     private final Clock clock;
 
     /** Gửi cùng một thông báo cho nhiều người; người đang thao tác không tự nhận thông báo của mình. */
@@ -50,7 +58,54 @@ public class NotificationService {
             return n;
         }).toList();
         notifications.saveAll(batch);
+        pushAfterCommit(recipients, batch.isEmpty() ? null : batch.getFirst());
         return batch.size();
+    }
+
+    private void pushAfterCommit(Set<Long> recipients, Notification sample) {
+        if (sample == null) {
+            return;
+        }
+        List<String> tokens = pushTokens.findTokensOfUsers(recipients);
+        if (tokens.isEmpty()) {
+            return;
+        }
+        String title = sample.getTitle();
+        String body = sample.getBody();
+        String link = sample.getLink();
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    pushSender.send(tokens, title, body, link);
+                }
+            });
+        } else {
+            pushSender.send(tokens, title, body, link);
+        }
+    }
+
+    /** Thiết bị cài app nhân viên đăng ký nhận push; token đang thuộc người khác thì chuyển sang người hiện tại. */
+    @Transactional
+    public void registerPushToken(NotificationDtos.PushTokenRequest request) {
+        Long me = CurrentUser.get().id();
+        OffsetDateTime now = OffsetDateTime.now(clock);
+        String value = request.token().trim();
+        UserPushToken token = pushTokens.findByToken(value).orElseGet(() -> {
+            UserPushToken t = new UserPushToken();
+            t.setToken(value);
+            t.setCreatedAt(now);
+            return t;
+        });
+        token.setUserId(me);
+        token.setPlatform(request.platform());
+        token.setUpdatedAt(now);
+        pushTokens.save(token);
+    }
+
+    @Transactional
+    public void unregisterPushToken(String token) {
+        pushTokens.deleteByTokenAndUser(token.trim(), CurrentUser.get().id());
     }
 
     public PageResponse<NotificationDtos.Response> mine(boolean unreadOnly, PageParams pageParams) {

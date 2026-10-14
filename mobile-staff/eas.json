@@ -1,0 +1,39 @@
+{
+  "cli": {
+    "version": ">= 16.0.0",
+    "appVersionSource": "remote"
+  },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://staging-api.bihome.vn"
+      }
+    },
+    "preview": {
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://staging-api.bihome.vn"
+      }
+    },
+    "demo": {
+      "extends": "preview",
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://landscapes-daughter-geography-pros.trycloudflare.com"
+      }
+    },
+    "production": {
+      "autoIncrement": true,
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://api.bihome.vn"
+      }
+    }
+  },
+  "submit": {
+    "production": {}
+  }
+}

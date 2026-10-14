@@ -1,0 +1,67 @@
+{
+  "expo": {
+    "name": "BiHome Quản lý",
+    "slug": "bihome-staff",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "scheme": "bihome-staff",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "bundleIdentifier": "vn.bihome.staff",
+      "supportsTablet": false,
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    },
+    "android": {
+      "package": "vn.bihome.staff",
+      "adaptiveIcon": {
+        "backgroundColor": "#1E293B",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "bundler": "metro",
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-status-bar",
+      "expo-secure-store",
+      "expo-image",
+      "expo-sharing",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/android-icon-monochrome.png",
+          "color": "#1F9D55"
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "BiHome Quản lý cần truy cập ảnh để đính kèm hình vào yêu cầu hỗ trợ.",
+          "cameraPermission": "BiHome Quản lý cần dùng máy ảnh để chụp hình hiện trường và đồng hồ điện nước.",
+          "microphonePermission": false
+        }
+      ],
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 160,
+          "resizeMode": "contain",
+          "backgroundColor": "#FFFFFF"
+        }
+      ],
+      "expo-font"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}

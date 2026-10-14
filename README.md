@@ -50,7 +50,7 @@ phí, kể cả thương mại) và [randomuser.me](https://randomuser.me) (châ
 
 | Tên đăng nhập | Mật khẩu | Vai trò |
 |---|---|---|
-| `admin` | `Admin@123` | Admin hệ thống (mọi quyền, mọi tòa) |
+| `admin` | `Admin@123` | Admin hệ thống (mọi quyền, mọi tòa) — web quản lý và **app nhân viên** |
 | `0900000001` | `CuDan@123` | Cư dân Nguyễn Văn An (căn A0101 SKY01) — đăng nhập **app cư dân** |
 
 Các vai trò có sẵn: Admin hệ thống, Trưởng ban quản lý, Nhân viên vận hành, Kế toán, Cư dân — tạo thêm người dùng ở
@@ -112,7 +112,8 @@ bihome/
 │       ├── layouts/              # header (bộ chọn tòa, SOS, thông báo), sidebar (menuConfig)
 │       ├── lib/ hooks/ stores/   # http, định dạng, kỳ thu phí, useListParams, Zustand
 │       └── pages/                # bảng điều khiển, trang lỗi
-└── mobile/                       # app cư dân (Expo / React Native) — xem mobile/README.md
+├── mobile/                       # app cư dân (Expo / React Native) — xem mobile/README.md
+└── mobile-staff/                 # app nhân viên BQL "BiHome Quản lý" — xem mobile-staff/README.md
 ```
 
 ## Ghi chú

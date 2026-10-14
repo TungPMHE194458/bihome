@@ -34,6 +34,9 @@ class NotificationControllerIT extends AbstractIT {
     @Autowired
     AnnouncementService announcementService;
 
+    @Autowired
+    UserPushTokenRepository pushTokens;
+
     private Building tower;
     private String managerToken;
     private AppUser staff;
@@ -81,6 +84,41 @@ class NotificationControllerIT extends AbstractIT {
                 .andExpect(jsonPath("$.read").value(true));
         mvc.perform(get("/api/v1/notifications/unread-count").header(HttpHeaders.AUTHORIZATION, bearer(staffToken)))
                 .andExpect(jsonPath("$.count").value(0));
+    }
+
+    @Test
+    void staffAppDevicesRegisterPushTokensThatFollowTheSignedInUser() throws Exception {
+        String token = "ExponentPushToken[" + unique("dev") + "]";
+        send(staffToken, post("/api/v1/notifications/push-tokens"), Map.of("token", token, "platform", "ANDROID"))
+                .andExpect(status().isNoContent());
+        assertThat(pushTokens.findTokensOfUsers(Set.of(staff.getId()))).containsExactly(token);
+
+        // Người khác đăng nhập trên cùng máy: token chuyển sang người đó.
+        AppUser other = createUser(unique("nv"), Set.of(tower.getId()), "STAFF");
+        send(login(other.getUsername()), post("/api/v1/notifications/push-tokens"), Map.of("token", token, "platform", "ANDROID"))
+                .andExpect(status().isNoContent());
+        assertThat(pushTokens.findTokensOfUsers(Set.of(staff.getId()))).isEmpty();
+        assertThat(pushTokens.findTokensOfUsers(Set.of(other.getId()))).containsExactly(token);
+
+        // Thông báo tới người có thiết bị vẫn tạo bình thường (push chỉ ghi log khi tắt).
+        long categoryId = json(send(managerToken, post("/api/v1/ticket-categories"), Map.of("name", unique("Nước "),
+                "responseSlaHours", 2, "resolutionSlaHours", 24, "status", "ACTIVE"))).get("id").asLong();
+        Map<String, Object> ticket = new HashMap<>();
+        ticket.put("title", "Rò nước tầng hầm");
+        ticket.put("categoryId", categoryId);
+        ticket.put("channel", "HOTLINE");
+        ticket.put("priority", "HIGH");
+        ticket.put("fileIds", List.of());
+        send(managerToken, post("/api/v1/tickets"), ticket).andExpect(status().isCreated());
+
+        // Huỷ token của người khác không có tác dụng; chính chủ huỷ được.
+        send(staffToken, delete("/api/v1/notifications/push-tokens/{token}", token), null).andExpect(status().isNoContent());
+        assertThat(pushTokens.findTokensOfUsers(Set.of(other.getId()))).containsExactly(token);
+        send(login(other.getUsername()), delete("/api/v1/notifications/push-tokens/{token}", token), null)
+                .andExpect(status().isNoContent());
+        assertThat(pushTokens.findByToken(token)).isEmpty();
+        send(staffToken, post("/api/v1/notifications/push-tokens"), Map.of("token", " ", "platform", "IOS"))
+                .andExpect(status().isBadRequest());
     }
 
     @Test

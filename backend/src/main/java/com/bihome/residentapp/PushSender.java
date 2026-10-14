@@ -1,5 +1,6 @@
 package com.bihome.residentapp;
 
+import com.bihome.notification.UserPushTokenRepository;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -14,7 +15,8 @@ import org.springframework.web.client.RestClient;
 
 /**
  * Gửi push qua Expo Push Service (Expo chuyển tiếp tới APNs / FCM) trên luồng riêng để không làm chậm request.
- * {@code bihome.resident-app.push-enabled=false} (local / test) thì chỉ ghi log. Token báo DeviceNotRegistered bị xoá.
+ * Dùng chung cho app cư dân và app nhân viên. {@code bihome.resident-app.push-enabled=false} (local / test) thì chỉ
+ * ghi log. Token báo DeviceNotRegistered bị xoá (ở cả hai bảng token).
  */
 @Slf4j
 @Component
@@ -25,14 +27,16 @@ public class PushSender {
 
     private final ResidentAppProperties properties;
     private final ResidentPushTokenRepository tokens;
+    private final UserPushTokenRepository staffTokens;
     private final TransactionTemplate transaction;
     private final RestClient client;
     private final ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
 
-    public PushSender(ResidentAppProperties properties, ResidentPushTokenRepository tokens, TransactionTemplate transaction,
-                      RestClient.Builder builder) {
+    public PushSender(ResidentAppProperties properties, ResidentPushTokenRepository tokens,
+                      UserPushTokenRepository staffTokens, TransactionTemplate transaction, RestClient.Builder builder) {
         this.properties = properties;
         this.tokens = tokens;
+        this.staffTokens = staffTokens;
         this.transaction = transaction;
         this.client = builder.baseUrl(EXPO_URL).build();
     }
@@ -77,7 +81,10 @@ public class PushSender {
                 }
             }
             if (!stale.isEmpty()) {
-                transaction.executeWithoutResult(s -> tokens.deleteTokens(stale));
+                transaction.executeWithoutResult(s -> {
+                    tokens.deleteTokens(stale);
+                    staffTokens.deleteTokens(stale);
+                });
             }
         } catch (RuntimeException e) {
             log.warn("Không gửi được push tới Expo: {}", e.getMessage());

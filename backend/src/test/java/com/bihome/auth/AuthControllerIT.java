@@ -193,6 +193,41 @@ class AuthControllerIT extends AbstractIT {
     }
 
     @Test
+    void mobileClientGetsTheRefreshTokenInTheBodyAndSendsItBackInAHeader() throws Exception {
+        String username = unique("staff");
+        createUser(username, "STAFF");
+
+        MvcResult login = mvc.perform(post("/api/v1/auth/login").header("X-Client-Type", "mobile")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of("username", username, "password", PASSWORD,
+                                "rememberMe", true))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.accessToken").isNotEmpty())
+                .andReturn();
+        assertThat(login.getResponse().getHeader(HttpHeaders.SET_COOKIE)).isNull();
+        String first = objectMapper.readTree(login.getResponse().getContentAsString()).get("refreshToken").asText();
+        assertThat(first).isNotBlank();
+
+        MvcResult rotated = mvc.perform(post("/api/v1/auth/refresh").header("X-Client-Type", "mobile")
+                        .header("X-Refresh-Token", first))
+                .andExpect(status().isOk())
+                .andReturn();
+        assertThat(rotated.getResponse().getHeader(HttpHeaders.SET_COOKIE)).isNull();
+        String second = objectMapper.readTree(rotated.getResponse().getContentAsString()).get("refreshToken").asText();
+        assertThat(second).isNotBlank().isNotEqualTo(first);
+
+        // Dùng lại token cũ → thu hồi cả chuỗi như web.
+        mvc.perform(post("/api/v1/auth/refresh").header("X-Client-Type", "mobile").header("X-Refresh-Token", first))
+                .andExpect(status().isUnauthorized());
+        mvc.perform(post("/api/v1/auth/refresh").header("X-Client-Type", "mobile").header("X-Refresh-Token", second))
+                .andExpect(status().isUnauthorized());
+
+        // Web không nhận refresh token trong body.
+        assertThat(objectMapper.readTree(loginResult(username, PASSWORD).getResponse().getContentAsString())
+                .has("refreshToken")).isFalse();
+    }
+
+    @Test
     void protectedEndpointsRejectMissingOrInvalidTokens() throws Exception {
         mvc.perform(get("/api/v1/auth/me"))
                 .andExpect(status().isUnauthorized())

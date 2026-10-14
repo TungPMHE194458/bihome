@@ -8,8 +8,8 @@ spring:
     out-of-order: true
 bihome:
   cors:
-    # Web BQL (Vite) + bản web của app cư dân khi dev (Expo); thêm tên miền khác qua BIHOME_CORS_ALLOWED_ORIGINS.
-    allowed-origins: ${BIHOME_CORS_ALLOWED_ORIGINS:http://localhost:5173,http://localhost:8081}
+    # Web BQL (Vite) + bản web của app cư dân (8081) và app nhân viên (8082) khi dev (Expo); thêm tên miền khác qua BIHOME_CORS_ALLOWED_ORIGINS.
+    allowed-origins: ${BIHOME_CORS_ALLOWED_ORIGINS:http://localhost:5173,http://localhost:8081,http://localhost:8082}
   jwt:
     secret: ${BIHOME_JWT_SECRET:change-me-local-only-at-least-32-bytes-long}
     cookie-secure: false
