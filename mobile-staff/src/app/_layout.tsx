@@ -75,6 +75,16 @@ function Navigator() {
         <Stack.Screen name="apartment-assets/categories/[id]" options={{ title: 'Danh mục' }} />
         <Stack.Screen name="apartment-assets/items/new" options={{ title: 'Thêm hạng mục' }} />
         <Stack.Screen name="apartment-assets/items/[id]" options={{ title: 'Hạng mục' }} />
+        <Stack.Screen name="residents/index" options={{ title: 'Cư dân' }} />
+        <Stack.Screen name="residents/new" options={{ title: 'Thêm cư dân' }} />
+        <Stack.Screen name="residents/[id]" options={{ title: 'Cư dân' }} />
+        <Stack.Screen name="declarations/index" options={{ title: 'Kê khai từ cư dân' }} />
+        <Stack.Screen name="access-cards/index" options={{ title: 'Thẻ từ' }} />
+        <Stack.Screen name="access-cards/new" options={{ title: 'Thêm thẻ từ' }} />
+        <Stack.Screen name="access-cards/[id]" options={{ title: 'Thẻ từ' }} />
+        <Stack.Screen name="vouchers/index" options={{ title: 'Voucher' }} />
+        <Stack.Screen name="vouchers/new" options={{ title: 'Thêm voucher' }} />
+        <Stack.Screen name="vouchers/[id]" options={{ title: 'Voucher' }} />
         <Stack.Screen name="profile-password" options={{ title: 'Đổi mật khẩu' }} />
       </Stack.Protected>
     </Stack>
