@@ -10,7 +10,7 @@ import { useAuth } from '@/lib/auth'
 import { DECLARATION_STATUS, GENDER, RELATIONSHIP, RESIDENT_ROLE } from '@/lib/constants'
 import { notify } from '@/lib/dialogs'
 import { formatDate, formatDateTime } from '@/lib/format'
-import { api } from '@/lib/staff'
+import { declarationApi } from '@/lib/staff'
 import { colors } from '@/theme'
 
 /**
@@ -21,7 +21,7 @@ export default function DeclarationScreen() {
   const id = Number(useLocalSearchParams<{ id: string }>().id)
   const qc = useQueryClient()
   const { can } = useAuth()
-  const declaration = useQuery({ queryKey: ['declaration', id], queryFn: () => api.declaration(id) })
+  const declaration = useQuery({ queryKey: ['declaration', id], queryFn: () => declarationApi.get(id) })
   const [phone, setPhone] = useState('')
   const [phoneError, setPhoneError] = useState<string>()
   const [busy, setBusy] = useState(false)
@@ -50,7 +50,7 @@ export default function DeclarationScreen() {
     setBusy(true)
     setPhoneError(undefined)
     try {
-      await api.approveDeclaration(id, { phone: member && !d.phone ? phone.trim() : null, version: d.version })
+      await declarationApi.approve(id, { phone: member && !d.phone ? phone.trim() : null, version: d.version })
       await done(member ? 'Đã duyệt – đã thêm thành viên vào căn hộ' : 'Đã duyệt – đã thêm xe')
     } catch (e) {
       const fe = fieldErrors(e)
@@ -63,7 +63,7 @@ export default function DeclarationScreen() {
 
   const reject = async (reason: string) => {
     try {
-      await api.rejectDeclaration(id, reason, d.version)
+      await declarationApi.reject(id, reason, d.version)
       setRejecting(false)
       await done('Đã từ chối phiếu kê khai')
     } catch (e) {

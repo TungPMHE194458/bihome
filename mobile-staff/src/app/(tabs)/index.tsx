@@ -10,7 +10,7 @@ import { useAuth } from '@/lib/auth'
 import { SOS_TYPE, TICKET_STATUS } from '@/lib/constants'
 import { money, timeAgo } from '@/lib/format'
 import { usePendingCounts, useSosActive, useUnreadCount } from '@/lib/queries'
-import { api } from '@/lib/staff'
+import { authApi, ticketApi } from '@/lib/staff'
 import { colors } from '@/theme'
 
 const OPEN = new Set(['NEW', 'RECEIVED', 'IN_PROGRESS', 'WAITING'])
@@ -23,12 +23,12 @@ export default function HomeScreen() {
   const month = dayjs().format('YYYY-MM')
   const dashboard = useQuery({
     queryKey: ['dashboard', buildingId, month],
-    queryFn: () => api.dashboard(month),
+    queryFn: () => authApi.dashboard(month),
     enabled: can('DASHBOARD_READ'),
   })
   const myTickets = useQuery({
     queryKey: ['tickets', 'mine', buildingId],
-    queryFn: () => api.tickets({ assigneeId: me?.id, size: 50 }),
+    queryFn: () => ticketApi.list({ assigneeId: me?.id, size: 50 }),
     enabled: can('TICKET_READ') && !!me,
   })
   const open = (myTickets.data?.content ?? []).filter((t) => OPEN.has(t.status))

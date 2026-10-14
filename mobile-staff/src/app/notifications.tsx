@@ -7,19 +7,19 @@ import { errorMessage } from '@/lib/api'
 import { NOTIFICATION_ICON } from '@/lib/constants'
 import { timeAgo } from '@/lib/format'
 import { routeForLink } from '@/lib/push'
-import { api } from '@/lib/staff'
+import { authApi } from '@/lib/staff'
 import type { AppNotification } from '@/lib/types'
 import { colors } from '@/theme'
 
 export default function NotificationsScreen() {
   const qc = useQueryClient()
-  const list = useQuery({ queryKey: ['notifications', 'list'], queryFn: () => api.notifications() })
+  const list = useQuery({ queryKey: ['notifications', 'list'], queryFn: () => authApi.notifications() })
   const items = list.data?.content ?? []
   const refreshCount = () => qc.invalidateQueries({ queryKey: ['notifications'] })
 
   const open = async (n: AppNotification) => {
     if (!n.read) {
-      void api.markRead(n.id).then(refreshCount)
+      void authApi.markRead(n.id).then(refreshCount)
     }
     router.push(routeForLink(n.link) as never)
   }
@@ -30,7 +30,7 @@ export default function NotificationsScreen() {
         options={{
           headerRight: () =>
             items.some((n) => !n.read) ? (
-              <Pressable onPress={() => void api.markAllRead().then(refreshCount)} hitSlop={8}>
+              <Pressable onPress={() => void authApi.markAllRead().then(refreshCount)} hitSlop={8}>
                 <Text style={{ color: colors.primaryDark, fontWeight: '600' }}>Đọc tất cả</Text>
               </Pressable>
             ) : null,

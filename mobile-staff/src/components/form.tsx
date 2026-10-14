@@ -1,8 +1,11 @@
 import dayjs from 'dayjs'
 import customParseFormat from 'dayjs/plugin/customParseFormat'
-import { Pressable, StyleSheet, Text, View } from 'react-native'
-import { TextField } from '@/components/ui'
-import { colors } from '@/theme'
+import { useState } from 'react'
+import { ActivityIndicator, FlatList, Modal, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native'
+import { Button, Icon, TextField } from '@/components/ui'
+import { DateTimePicker } from '@/lib/file'
+import { formatDate } from '@/lib/format'
+import { colors, radius } from '@/theme'
 
 dayjs.extend(customParseFormat)
 
@@ -139,4 +142,269 @@ const styles = StyleSheet.create({
   step: { width: 36, height: 36, borderRadius: 18, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' },
   stepText: { fontSize: 20, color: colors.text },
   stepValue: { fontSize: 18, fontWeight: '700', minWidth: 32, textAlign: 'center' },
+})
+
+// ------------------------------------------------------------ Chọn ngày
+
+/**
+ * Chọn ngày (yyyy-mm-dd). Web dùng {@link DateField} (gõ số); điện thoại mở picker gốc của hệ điều hành — iOS hiện
+ * dạng spinner trong tấm trượt lên, Android tự mở hộp thoại hệ thống.
+ */
+export function DateInput({
+  label,
+  value,
+  onChange,
+  error,
+  minimumDate,
+  maximumDate,
+}: {
+  label: string
+  value?: string | null
+  onChange: (v: string | undefined) => void
+  error?: string
+  minimumDate?: Date
+  maximumDate?: Date
+}) {
+  const [open, setOpen] = useState(false)
+  const [webText, setWebText] = useState(value ? dayjs(value).format('DD/MM/YYYY') : '')
+  if (Platform.OS === 'web') {
+    return (
+      <DateField
+        label={label}
+        value={webText}
+        onChange={(t) => {
+          setWebText(t)
+          const parsed = parseVnDate(t)
+          if (parsed !== null) onChange(parsed)
+        }}
+        error={error}
+      />
+    )
+  }
+  const date = value ? dayjs(value).toDate() : new Date()
+  return (
+    <View style={{ gap: 6 }}>
+      <Text style={styles.label}>{label}</Text>
+      <Pressable
+        onPress={() => setOpen(true)}
+        style={[dateStyles.field, error ? { borderColor: colors.danger } : null]}
+        accessibilityLabel={label}
+      >
+        <Icon name="calendar-outline" size={18} color={colors.textMuted} />
+        <Text style={[dateStyles.text, !value && { color: colors.textMuted }]}>{value ? formatDate(value) : 'Chọn ngày'}</Text>
+      </Pressable>
+      {error ? <Text style={styles.error}>{error}</Text> : null}
+      {open && (
+        <DateTimePicker
+          value={date}
+          mode="date"
+          display={Platform.OS === 'ios' ? 'inline' : 'default'}
+          minimumDate={minimumDate}
+          maximumDate={maximumDate}
+          onChange={(event, picked) => {
+            if (Platform.OS === 'android') setOpen(false)
+            if (event.type === 'dismissed') return
+            if (picked) onChange(dayjs(picked).format('YYYY-MM-DD'))
+          }}
+        />
+      )}
+      {Platform.OS === 'ios' && open && <Button title="Xong" onPress={() => setOpen(false)} />}
+    </View>
+  )
+}
+
+const dateStyles = StyleSheet.create({
+  field: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.md,
+    backgroundColor: colors.card,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  text: { fontSize: 16, color: colors.text },
+})
+
+// ------------------------------------------------------------ Tìm & chọn (modal)
+
+export interface PickerOption<T> {
+  value: T
+  label: string
+  sublabel?: string
+}
+
+/**
+ * Modal tìm kiếm + chọn một giá trị — dùng cho chọn tòa nhà, căn hộ, cư dân, danh mục, người xử lý... `options` tải
+ * sẵn (danh mục ngắn) hoặc `onSearch` gọi API theo từ khoá (danh sách dài như căn hộ / cư dân).
+ */
+export function SearchPicker<T extends string | number>({
+  label,
+  value,
+  valueLabel,
+  options,
+  onSearch,
+  onChange,
+  error,
+  required,
+  placeholder = 'Tìm kiếm…',
+}: {
+  label: string
+  value: T | null
+  /** Nhãn hiện trên ô khi đã chọn (vì options có thể chưa tải option đang chọn). */
+  valueLabel?: string
+  options?: PickerOption<T>[]
+  onSearch?: (keyword: string) => Promise<PickerOption<T>[]>
+  onChange: (v: T | null, option?: PickerOption<T>) => void
+  error?: string
+  required?: boolean
+  placeholder?: string
+}) {
+  const [visible, setVisible] = useState(false)
+  const [keyword, setKeyword] = useState('')
+  const [results, setResults] = useState<PickerOption<T>[]>(options ?? [])
+  const [loading, setLoading] = useState(false)
+
+  const search = async (text: string) => {
+    setKeyword(text)
+    if (!onSearch) {
+      setResults((options ?? []).filter((o) => !text || o.label.toLowerCase().includes(text.toLowerCase())))
+      return
+    }
+    setLoading(true)
+    try {
+      setResults(await onSearch(text))
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const openModal = () => {
+    setVisible(true)
+    setKeyword('')
+    void search('')
+  }
+
+  const selected = valueLabel ?? options?.find((o) => o.value === value)?.label
+
+  return (
+    <View style={{ gap: 6 }}>
+      <Text style={styles.label}>
+        {label}
+        {required ? ' *' : ''}
+      </Text>
+      <Pressable
+        onPress={openModal}
+        style={[pickerStyles.field, error ? { borderColor: colors.danger } : null]}
+        accessibilityLabel={label}
+        accessibilityRole="button"
+      >
+        <Text style={[pickerStyles.text, !selected && { color: colors.textMuted }]} numberOfLines={1}>
+          {selected ?? placeholder}
+        </Text>
+        <Icon name="chevron-down" size={18} color={colors.textMuted} />
+      </Pressable>
+      {error ? <Text style={styles.error}>{error}</Text> : null}
+
+      <Modal visible={visible} animationType="slide" onRequestClose={() => setVisible(false)}>
+        <View style={pickerStyles.modal}>
+          <View style={pickerStyles.modalHeader}>
+            <Pressable onPress={() => setVisible(false)} hitSlop={10} accessibilityLabel="Đóng">
+              <Icon name="close" size={24} color={colors.text} />
+            </Pressable>
+            <Text style={pickerStyles.modalTitle}>{label}</Text>
+            <View style={{ width: 24 }} />
+          </View>
+          <TextInput
+            style={pickerStyles.search}
+            placeholder={placeholder}
+            placeholderTextColor={colors.textMuted}
+            value={keyword}
+            onChangeText={(t) => void search(t)}
+            autoFocus
+          />
+          {!required && (
+            <Pressable
+              onPress={() => {
+                onChange(null)
+                setVisible(false)
+              }}
+              style={pickerStyles.row}
+            >
+              <Text style={[pickerStyles.rowLabel, { color: colors.textMuted }]}>Bỏ chọn</Text>
+            </Pressable>
+          )}
+          {loading ? (
+            <ActivityIndicator style={{ marginTop: 24 }} color={colors.primary} />
+          ) : (
+            <FlatList
+              data={results}
+              keyExtractor={(o) => String(o.value)}
+              keyboardShouldPersistTaps="handled"
+              renderItem={({ item }) => (
+                <Pressable
+                  onPress={() => {
+                    onChange(item.value, item)
+                    setVisible(false)
+                  }}
+                  style={pickerStyles.row}
+                >
+                  <View style={{ flex: 1 }}>
+                    <Text style={pickerStyles.rowLabel}>{item.label}</Text>
+                    {item.sublabel ? <Text style={pickerStyles.rowSub}>{item.sublabel}</Text> : null}
+                  </View>
+                  {item.value === value && <Icon name="check" size={20} color={colors.primary} />}
+                </Pressable>
+              )}
+              ListEmptyComponent={<Text style={pickerStyles.empty}>Không tìm thấy kết quả.</Text>}
+            />
+          )}
+        </View>
+      </Modal>
+    </View>
+  )
+}
+
+const pickerStyles = StyleSheet.create({
+  field: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.md,
+    backgroundColor: colors.card,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  text: { fontSize: 16, color: colors.text, flexShrink: 1 },
+  modal: { flex: 1, backgroundColor: colors.card, paddingTop: 54 },
+  modalHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingBottom: 12 },
+  modalTitle: { fontSize: 16, fontWeight: '700', color: colors.text },
+  search: {
+    marginHorizontal: 16,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.md,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    fontSize: 16,
+    color: colors.text,
+    backgroundColor: colors.background,
+  },
+  row: {
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.border,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  rowLabel: { fontSize: 15, color: colors.text },
+  rowSub: { fontSize: 13, color: colors.textMuted, marginTop: 2 },
+  empty: { textAlign: 'center', color: colors.textMuted, marginTop: 32 },
 })

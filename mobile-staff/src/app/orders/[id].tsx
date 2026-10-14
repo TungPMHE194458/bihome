@@ -10,14 +10,14 @@ import { useAuth } from '@/lib/auth'
 import { ORDER_STATUS } from '@/lib/constants'
 import { notify } from '@/lib/dialogs'
 import { formatDateTime, money } from '@/lib/format'
-import { api } from '@/lib/staff'
+import { serviceApi } from '@/lib/staff'
 import { colors } from '@/theme'
 
 export default function OrderScreen() {
   const id = Number(useLocalSearchParams<{ id: string }>().id)
   const qc = useQueryClient()
   const { can } = useAuth()
-  const order = useQuery({ queryKey: ['order', id], queryFn: () => api.order(id) })
+  const order = useQuery({ queryKey: ['order', id], queryFn: () => serviceApi.order(id) })
   const [busy, setBusy] = useState(false)
   const [cancelling, setCancelling] = useState(false)
 
@@ -47,7 +47,7 @@ export default function OrderScreen() {
 
   const cancel = async (reason: string) => {
     try {
-      await api.cancelOrder(id, reason, o.version)
+      await serviceApi.cancelOrder(id, reason, o.version)
       setCancelling(false)
       await changed()
     } catch (e) {
@@ -76,10 +76,10 @@ export default function OrderScreen() {
         {o.cancelReason ? <Text style={[styles.note, { color: colors.danger }]}>Lý do huỷ: {o.cancelReason}</Text> : null}
       </Card>
       {canWrite && o.status === 'PENDING' && (
-        <Button title="Xác nhận đơn" icon="check" onPress={() => void run(() => api.confirmOrder(id, o.version), 'Đã xác nhận đơn')} loading={busy} />
+        <Button title="Xác nhận đơn" icon="check" onPress={() => void run(() => serviceApi.confirmOrder(id, o.version), 'Đã xác nhận đơn')} loading={busy} />
       )}
       {canWrite && o.status === 'CONFIRMED' && (
-        <Button title="Hoàn thành" icon="check-all" onPress={() => void run(() => api.completeOrder(id, o.version), 'Đã hoàn thành đơn')} loading={busy} />
+        <Button title="Hoàn thành" icon="check-all" onPress={() => void run(() => serviceApi.completeOrder(id, o.version), 'Đã hoàn thành đơn')} loading={busy} />
       )}
       {canWrite && (o.status === 'PENDING' || o.status === 'CONFIRMED') && (
         <Button title="Huỷ đơn" variant="ghost" onPress={() => setCancelling(true)} />

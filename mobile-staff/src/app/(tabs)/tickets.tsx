@@ -8,7 +8,7 @@ import { errorMessage } from '@/lib/api'
 import { useAuth } from '@/lib/auth'
 import { TICKET_PRIORITY, TICKET_STATUS } from '@/lib/constants'
 import { timeAgo } from '@/lib/format'
-import { api } from '@/lib/staff'
+import { ticketApi } from '@/lib/staff'
 import type { TicketStatus } from '@/lib/types'
 import { colors } from '@/theme'
 
@@ -48,7 +48,7 @@ export default function TicketsScreen() {
   const query = useInfiniteQuery({
     queryKey: ['tickets', 'list', buildingId, scope, status, search],
     queryFn: ({ pageParam }) =>
-      api.tickets({
+      ticketApi.list({
         page: pageParam,
         keyword: search,
         status: status === 'any' ? undefined : status,

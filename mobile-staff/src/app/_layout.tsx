@@ -65,6 +65,16 @@ function Navigator() {
         <Stack.Screen name="meter" options={{ title: 'Ghi chỉ số điện nước' }} />
         <Stack.Screen name="lookup" options={{ title: 'Tra cứu' }} />
         <Stack.Screen name="apartments/[id]" options={{ title: 'Căn hộ' }} />
+        <Stack.Screen name="apartments/index" options={{ title: 'Căn hộ' }} />
+        <Stack.Screen name="apartments/new" options={{ title: 'Thêm căn hộ' }} />
+        <Stack.Screen name="buildings/index" options={{ title: 'Tòa nhà' }} />
+        <Stack.Screen name="buildings/new" options={{ title: 'Thêm tòa nhà' }} />
+        <Stack.Screen name="buildings/[id]" options={{ title: 'Tòa nhà' }} />
+        <Stack.Screen name="apartment-assets/index" options={{ title: 'Hạng mục căn hộ' }} />
+        <Stack.Screen name="apartment-assets/categories/new" options={{ title: 'Thêm danh mục' }} />
+        <Stack.Screen name="apartment-assets/categories/[id]" options={{ title: 'Danh mục' }} />
+        <Stack.Screen name="apartment-assets/items/new" options={{ title: 'Thêm hạng mục' }} />
+        <Stack.Screen name="apartment-assets/items/[id]" options={{ title: 'Hạng mục' }} />
         <Stack.Screen name="profile-password" options={{ title: 'Đổi mật khẩu' }} />
       </Stack.Protected>
     </Stack>

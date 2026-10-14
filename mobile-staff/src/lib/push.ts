@@ -3,7 +3,7 @@ import * as Device from 'expo-device'
 import * as Notifications from 'expo-notifications'
 import { router } from 'expo-router'
 import { Platform } from 'react-native'
-import { api } from '@/lib/staff'
+import { authApi } from '@/lib/staff'
 
 let token: string | null = null
 
@@ -43,7 +43,7 @@ export async function registerForPush(): Promise<void> {
     const projectId = Constants.expoConfig?.extra?.eas?.projectId ?? Constants.easConfig?.projectId
     if (!projectId) return
     token = (await Notifications.getExpoPushTokenAsync({ projectId })).data
-    await api.registerPushToken(token, Platform.OS === 'ios' ? 'IOS' : 'ANDROID')
+    await authApi.registerPushToken(token, Platform.OS === 'ios' ? 'IOS' : 'ANDROID')
   } catch {
     // Không có push vẫn dùng được app.
   }

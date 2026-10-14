@@ -53,6 +53,7 @@ export default function TabLayout() {
           href: pending.any ? undefined : null,
         }}
       />
+      <Tabs.Screen name="manage" options={{ title: 'Quản lý', tabBarIcon: icon('view-grid') }} />
       <Tabs.Screen name="more" options={{ title: 'Thêm', tabBarIcon: icon('dots-horizontal-circle') }} />
     </Tabs>
   )

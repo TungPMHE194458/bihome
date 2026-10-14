@@ -10,7 +10,7 @@ import { useAuth } from '@/lib/auth'
 import { BOOKING_STATUS, DECLARATION_STATUS, ORDER_STATUS, RELATIONSHIP } from '@/lib/constants'
 import { formatDate, formatDateTime, money, timeAgo } from '@/lib/format'
 import { usePendingCounts } from '@/lib/queries'
-import { api } from '@/lib/staff'
+import { bookingApi, declarationApi, serviceApi } from '@/lib/staff'
 import { colors } from '@/theme'
 
 type Kind = 'bookings' | 'declarations' | 'orders'
@@ -37,7 +37,7 @@ export default function ApprovalsScreen() {
 
 function Bookings() {
   const { buildingId } = useAuth()
-  const q = useQuery({ queryKey: ['bookings', 'pending', buildingId], queryFn: () => api.bookings({ status: 'PENDING', sort: 'bookingDate,asc' }) })
+  const q = useQuery({ queryKey: ['bookings', 'pending', buildingId], queryFn: () => bookingApi.list({ status: 'PENDING', sort: 'bookingDate,asc' }) })
   if (q.isLoading) return <Loading />
   if (q.error) return <ErrorView message={errorMessage(q.error)} onRetry={() => void q.refetch()} />
   const items = q.data?.content ?? []
@@ -62,7 +62,7 @@ function Bookings() {
 
 function Declarations() {
   const { buildingId } = useAuth()
-  const q = useQuery({ queryKey: ['declarations', 'pending', buildingId], queryFn: () => api.declarations({ status: 'PENDING' }) })
+  const q = useQuery({ queryKey: ['declarations', 'pending', buildingId], queryFn: () => declarationApi.list({ status: 'PENDING' }) })
   if (q.isLoading) return <Loading />
   if (q.error) return <ErrorView message={errorMessage(q.error)} onRetry={() => void q.refetch()} />
   const items = q.data?.content ?? []
@@ -90,8 +90,8 @@ function Declarations() {
 
 function Orders() {
   const { buildingId } = useAuth()
-  const pendingQ = useQuery({ queryKey: ['orders', 'PENDING', buildingId], queryFn: () => api.orders({ status: 'PENDING' }) })
-  const confirmedQ = useQuery({ queryKey: ['orders', 'CONFIRMED', buildingId], queryFn: () => api.orders({ status: 'CONFIRMED' }) })
+  const pendingQ = useQuery({ queryKey: ['orders', 'PENDING', buildingId], queryFn: () => serviceApi.orders({ status: 'PENDING' }) })
+  const confirmedQ = useQuery({ queryKey: ['orders', 'CONFIRMED', buildingId], queryFn: () => serviceApi.orders({ status: 'CONFIRMED' }) })
   if (pendingQ.isLoading) return <Loading />
   if (pendingQ.error) return <ErrorView message={errorMessage(pendingQ.error)} onRetry={() => void pendingQ.refetch()} />
   const sections = [

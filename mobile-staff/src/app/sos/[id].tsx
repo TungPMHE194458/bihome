@@ -11,14 +11,14 @@ import { useAuth } from '@/lib/auth'
 import { SOS_STATUS, SOS_TYPE } from '@/lib/constants'
 import { notify } from '@/lib/dialogs'
 import { formatDateTime, timeAgo } from '@/lib/format'
-import { api } from '@/lib/staff'
+import { sosApi } from '@/lib/staff'
 import { colors } from '@/theme'
 
 export default function SosDetailScreen() {
   const id = Number(useLocalSearchParams<{ id: string }>().id)
   const qc = useQueryClient()
   const { can } = useAuth()
-  const alert = useQuery({ queryKey: ['sos', id], queryFn: () => api.sos(id), refetchInterval: 15_000 })
+  const alert = useQuery({ queryKey: ['sos', id], queryFn: () => sosApi.get(id), refetchInterval: 15_000 })
   const [busy, setBusy] = useState(false)
   const [closing, setClosing] = useState(false)
   const [result, setResult] = useState<'RESOLVED' | 'FALSE_ALARM'>('RESOLVED')
@@ -37,7 +37,7 @@ export default function SosDetailScreen() {
   const acknowledge = async () => {
     setBusy(true)
     try {
-      await api.acknowledgeSos(id, a.version)
+      await sosApi.acknowledge(id, a.version)
       await changed()
     } catch (e) {
       notify('Không tiếp nhận được', errorMessage(e))
@@ -48,7 +48,7 @@ export default function SosDetailScreen() {
 
   const resolve = async (note: string) => {
     try {
-      await api.resolveSos(id, result, note, a.version)
+      await sosApi.resolve(id, result, note, a.version)
       setClosing(false)
       await changed()
     } catch (e) {

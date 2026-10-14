@@ -12,7 +12,7 @@ import { useAuth } from '@/lib/auth'
 import { METER_TYPE } from '@/lib/constants'
 import { notify } from '@/lib/dialogs'
 import { periodLabel } from '@/lib/format'
-import { api } from '@/lib/staff'
+import { meterApi } from '@/lib/staff'
 import type { MeterType, SheetRow } from '@/lib/types'
 import { colors, radius } from '@/theme'
 
@@ -46,7 +46,7 @@ export default function MeterScreen() {
   // Tải cả tòa một lần rồi lọc theo tầng trên máy (chuyển tầng không phải chờ mạng).
   const sheet = useQuery({
     queryKey: ['meter', buildingId, period, type],
-    queryFn: () => api.meterSheet(period, type),
+    queryFn: () => meterApi.sheet(period, type),
     enabled: buildingId != null,
   })
   const floors = useMemo(() => sheet.data?.floors ?? [], [sheet.data])
@@ -82,7 +82,7 @@ export default function MeterScreen() {
     }
     setSaving(true)
     try {
-      const r = await api.saveMeterSheet(period, type, entries)
+      const r = await meterApi.saveSheet(period, type, entries)
       setDraft({})
       await sheet.refetch()
       void qc.invalidateQueries({ queryKey: ['dashboard'] })

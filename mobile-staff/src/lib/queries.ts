@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useEffect, useRef } from 'react'
 import { Platform, Vibration } from 'react-native'
 import { useAuth } from '@/lib/auth'
-import { api } from '@/lib/staff'
+import { authApi, bookingApi, declarationApi, serviceApi, sosApi } from '@/lib/staff'
 
 /**
  * Cảnh báo SOS đang mở của tòa đang chọn, hỏi lại mỗi 15 giây (như nút SOS trên web). Có cảnh báo mới hơn lần hỏi
@@ -13,7 +13,7 @@ export function useSosActive() {
   const enabled = can('SOS_READ')
   const query = useQuery({
     queryKey: ['sos', 'active', buildingId],
-    queryFn: api.sosActive,
+    queryFn: sosApi.active,
     enabled,
     refetchInterval: 15_000,
   })
@@ -37,19 +37,19 @@ export function usePendingCounts() {
   const canOrder = can('SERVICE_WRITE')
   const bookings = useQuery({
     queryKey: ['pending', 'bookings', buildingId],
-    queryFn: () => api.bookings({ status: 'PENDING', size: 10 }),
+    queryFn: () => bookingApi.list({ status: 'PENDING', size: 10 }),
     enabled: canBooking,
     refetchInterval: 60_000,
   })
   const declarations = useQuery({
     queryKey: ['pending', 'declarations', buildingId],
-    queryFn: () => api.declarations({ status: 'PENDING', size: 10 }),
+    queryFn: () => declarationApi.list({ status: 'PENDING', size: 10 }),
     enabled: canDeclaration,
     refetchInterval: 60_000,
   })
   const orders = useQuery({
     queryKey: ['pending', 'orders', buildingId],
-    queryFn: () => api.orders({ status: 'PENDING', size: 10 }),
+    queryFn: () => serviceApi.orders({ status: 'PENDING', size: 10 }),
     enabled: canOrder,
     refetchInterval: 60_000,
   })
@@ -69,5 +69,5 @@ export function usePendingCounts() {
 }
 
 export function useUnreadCount() {
-  return useQuery({ queryKey: ['notifications', 'unread'], queryFn: api.unreadCount, refetchInterval: 30_000 })
+  return useQuery({ queryKey: ['notifications', 'unread'], queryFn: authApi.unreadCount, refetchInterval: 30_000 })
 }

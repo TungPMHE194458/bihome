@@ -9,7 +9,7 @@ import { AuthImage, Card, EmptyState, ErrorView, Icon, Loading, TextField } from
 import { errorMessage } from '@/lib/api'
 import { useAuth } from '@/lib/auth'
 import { RESIDENCE_STATUS, RESIDENT_ROLE } from '@/lib/constants'
-import { api } from '@/lib/staff'
+import { lookupApi } from '@/lib/staff'
 import type { ResidentSummary } from '@/lib/types'
 import { colors } from '@/theme'
 
@@ -34,17 +34,17 @@ export default function LookupScreen() {
 
   const residents = useQuery({
     queryKey: ['lookup', 'residents', buildingId, keyword],
-    queryFn: () => api.residents(keyword),
+    queryFn: () => lookupApi.residents(keyword),
     enabled: kind === 'residents' && keyword.length > 0,
   })
   const apartments = useQuery({
     queryKey: ['lookup', 'apartments', buildingId, keyword],
-    queryFn: () => api.apartments(keyword),
+    queryFn: () => lookupApi.apartments({ keyword }),
     enabled: kind === 'apartments' && keyword.length > 0,
   })
   const vehicles = useQuery({
     queryKey: ['lookup', 'vehicles', buildingId, keyword],
-    queryFn: () => api.vehicles({ keyword }),
+    queryFn: () => lookupApi.vehicles({ keyword }),
     enabled: kind === 'vehicles' && keyword.length > 0,
   })
   const active = { residents, apartments, vehicles }[kind]

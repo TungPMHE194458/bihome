@@ -10,14 +10,14 @@ import { useAuth } from '@/lib/auth'
 import { BOOKING_STATUS } from '@/lib/constants'
 import { notify } from '@/lib/dialogs'
 import { formatDate, formatDateTime, money } from '@/lib/format'
-import { api } from '@/lib/staff'
+import { bookingApi } from '@/lib/staff'
 import { colors } from '@/theme'
 
 export default function BookingScreen() {
   const id = Number(useLocalSearchParams<{ id: string }>().id)
   const qc = useQueryClient()
   const { can } = useAuth()
-  const booking = useQuery({ queryKey: ['booking', id], queryFn: () => api.booking(id) })
+  const booking = useQuery({ queryKey: ['booking', id], queryFn: () => bookingApi.get(id) })
   const [busy, setBusy] = useState(false)
   const [rejecting, setRejecting] = useState(false)
 
@@ -37,7 +37,7 @@ export default function BookingScreen() {
   const approve = async () => {
     setBusy(true)
     try {
-      await api.approveBooking(id, b.version)
+      await bookingApi.approve(id, b.version)
       await done('Đã duyệt lượt đặt')
     } catch (e) {
       notify('Không duyệt được', errorMessage(e))
@@ -48,7 +48,7 @@ export default function BookingScreen() {
 
   const reject = async (reason: string) => {
     try {
-      await api.rejectBooking(id, reason, b.version)
+      await bookingApi.reject(id, reason, b.version)
       setRejecting(false)
       await done('Đã từ chối lượt đặt')
     } catch (e) {

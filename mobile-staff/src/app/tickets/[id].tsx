@@ -12,7 +12,7 @@ import { useAuth } from '@/lib/auth'
 import { STATUS_ACTION, TICKET_PRIORITY, TICKET_STATUS } from '@/lib/constants'
 import { notify } from '@/lib/dialogs'
 import { formatDateTime } from '@/lib/format'
-import { api } from '@/lib/staff'
+import { ticketApi } from '@/lib/staff'
 import type { Attachment, TicketStatus, TimelineEntry, Visibility } from '@/lib/types'
 import { colors, radius } from '@/theme'
 
@@ -21,12 +21,12 @@ export default function TicketScreen() {
   const qc = useQueryClient()
   const { me, can } = useAuth()
   const canWrite = can('TICKET_WRITE')
-  const ticket = useQuery({ queryKey: ['ticket', id], queryFn: () => api.ticket(id) })
-  const timeline = useQuery({ queryKey: ['ticket', id, 'timeline'], queryFn: () => api.timeline(id) })
+  const ticket = useQuery({ queryKey: ['ticket', id], queryFn: () => ticketApi.get(id) })
+  const timeline = useQuery({ queryKey: ['ticket', id, 'timeline'], queryFn: () => ticketApi.timeline(id) })
   const buildingId = ticket.data?.ticket.buildingId
   const assignees = useQuery({
     queryKey: ['assignees', buildingId],
-    queryFn: () => api.assignees(buildingId!),
+    queryFn: () => ticketApi.assignees(buildingId!),
     enabled: canWrite && buildingId != null,
   })
 
@@ -55,7 +55,7 @@ export default function TicketScreen() {
   const changeStatus = async (note: string) => {
     if (!target) return
     try {
-      await api.changeStatus(id, { status: target, note: note || null, visibility: noteVisible ? 'PUBLIC' : 'INTERNAL', version: s.version })
+      await ticketApi.changeStatus(id, { status: target, note: note || null, visibility: noteVisible ? 'PUBLIC' : 'INTERNAL', version: s.version })
       setTarget(null)
       await changed()
     } catch (e) {
@@ -66,7 +66,7 @@ export default function TicketScreen() {
   const assign = async (assigneeId: number | null) => {
     setBusy(true)
     try {
-      await api.assign(id, assigneeId, s.version)
+      await ticketApi.assign(id, assigneeId, s.version)
       setPicking(false)
       await changed()
     } catch (e) {
@@ -80,7 +80,7 @@ export default function TicketScreen() {
     if (!comment.trim()) return
     setSending(true)
     try {
-      await api.comment(id, comment.trim(), visibility, photos.map((p) => p.fileId))
+      await ticketApi.comment(id, comment.trim(), visibility, photos.map((p) => p.fileId))
       setComment('')
       setPhotos([])
       await timeline.refetch()

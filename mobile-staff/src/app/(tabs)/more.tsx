@@ -9,20 +9,13 @@ import { useUnreadCount } from '@/lib/queries'
 import { colors } from '@/theme'
 
 export default function MoreScreen() {
-  const { me, can, logout } = useAuth()
+  const { me, logout } = useAuth()
   const buildingName = useBuildingName()
   const unread = useUnreadCount()
   if (!me) return null
 
   const items: { icon: IconName; label: string; href: Href; show: boolean; badge?: number }[] = [
     { icon: 'bell-outline', label: 'Thông báo', href: '/notifications', show: true, badge: unread.data?.count },
-    { icon: 'gauge', label: 'Ghi chỉ số điện nước', href: '/meter', show: can('METER_READING_WRITE') },
-    {
-      icon: 'account-search-outline',
-      label: 'Tra cứu cư dân, căn hộ, xe',
-      href: '/lookup',
-      show: can('RESIDENT_READ') || can('APARTMENT_READ') || can('ASSET_READ'),
-    },
     { icon: 'office-building-marker-outline', label: `Tòa nhà: ${buildingName}`, href: '/building', show: true },
     { icon: 'lock-reset', label: 'Đổi mật khẩu', href: '/profile-password', show: true },
   ]

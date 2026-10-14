@@ -10,7 +10,7 @@ import { useAuth } from '@/lib/auth'
 import { SOS_STATUS, SOS_TYPE } from '@/lib/constants'
 import { formatDateTime, timeAgo } from '@/lib/format'
 import { useSosActive } from '@/lib/queries'
-import { api } from '@/lib/staff'
+import { sosApi } from '@/lib/staff'
 import type { SosAlert } from '@/lib/types'
 import { colors } from '@/theme'
 
@@ -23,7 +23,7 @@ export default function SosScreen() {
   const active = useSosActive()
   const history = useQuery({
     queryKey: ['sos', 'history', buildingId],
-    queryFn: () => api.sosList({ open: false }),
+    queryFn: () => sosApi.list({ open: false }),
     enabled: tab === 'closed',
   })
   const openItems = active.data?.latest ?? []

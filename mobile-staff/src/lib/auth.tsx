@@ -2,7 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 import { useQueryClient } from '@tanstack/react-query'
 import { session } from '@/lib/api'
 import { currentPushToken, registerForPush } from '@/lib/push'
-import { api } from '@/lib/staff'
+import { authApi } from '@/lib/staff'
 import { KEYS, secureStorage } from '@/lib/storage'
 import type { BuildingOption, Me } from '@/lib/types'
 
@@ -46,11 +46,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [qc])
 
   const loadMe = useCallback(async () => {
-    const profile = await api.me()
+    const profile = await authApi.me()
     setMe(profile)
     setMustChangePassword(profile.mustChangePassword)
     if (!profile.mustChangePassword) {
-      const options = await api.buildings()
+      const options = await authApi.buildings()
       const saved = await secureStorage.get(KEYS.building)
       const multi = profile.allBuildings || options.length > 1
       // Tòa đã chọn lần trước (nếu còn được giao); không có thì "Tất cả" khi được xem nhiều tòa, hoặc tòa duy nhất.
@@ -93,22 +93,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       canSelectAll: !!me && (me.allBuildings || buildings.length > 1),
       can: (p) => permissions.has(p),
       login: async (username, password) => {
-        const tokens = await api.login(username, password)
+        const tokens = await authApi.login(username, password)
         await session.save(tokens)
         await loadMe()
       },
       logout: async () => {
         try {
           const push = currentPushToken()
-          if (push) await api.unregisterPushToken(push)
-          await api.logout(await secureStorage.get(KEYS.refreshToken))
+          if (push) await authApi.unregisterPushToken(push)
+          await authApi.logout(await secureStorage.get(KEYS.refreshToken))
         } catch {
           // Mạng lỗi vẫn đăng xuất trên máy.
         }
         await signOutLocally()
       },
       changePassword: async (current, next) => {
-        const tokens = await api.changePassword(current, next, await secureStorage.get(KEYS.refreshToken))
+        const tokens = await authApi.changePassword(current, next, await secureStorage.get(KEYS.refreshToken))
         await session.save(tokens)
         await loadMe()
       },

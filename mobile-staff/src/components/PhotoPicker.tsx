@@ -5,7 +5,7 @@ import { ActivityIndicator, Platform, Pressable, StyleSheet, View } from 'react-
 import { Icon } from '@/components/ui'
 import { errorMessage } from '@/lib/api'
 import { notify } from '@/lib/dialogs'
-import { api } from '@/lib/staff'
+import { authApi } from '@/lib/staff'
 import { colors } from '@/theme'
 
 export interface UploadedPhoto {
@@ -44,8 +44,8 @@ export function PhotoPicker({
       const name = asset.fileName ?? `anh-${Date.now()}.jpg`
       const uploaded =
         Platform.OS === 'web' && asset.file
-          ? await api.uploadBlob(asset.file, name, purpose)
-          : await api.uploadPhoto(asset.uri, name, asset.mimeType ?? 'image/jpeg', purpose)
+          ? await authApi.uploadBlob(asset.file, name, purpose)
+          : await authApi.uploadPhoto(asset.uri, name, asset.mimeType ?? 'image/jpeg', purpose)
       onChange([...value, { fileId: uploaded.id, uri: asset.uri }])
     } catch (e) {
       notify('Không tải được ảnh', errorMessage(e))
