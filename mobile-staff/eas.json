@@ -23,7 +23,7 @@
     "demo": {
       "extends": "preview",
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://landscapes-daughter-geography-pros.trycloudflare.com"
+        "EXPO_PUBLIC_API_URL": "https://tex-moral-brighton-manufacturing.trycloudflare.com"
       }
     },
     "production": {
