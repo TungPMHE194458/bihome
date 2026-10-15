@@ -106,6 +106,10 @@ function Navigator() {
         <Stack.Screen name="amenity-reports/index" options={{ title: 'Báo cáo tiện ích' }} />
         <Stack.Screen name="bookings/index" options={{ title: 'Đăng ký tiện ích' }} />
         <Stack.Screen name="bookings/new" options={{ title: 'Tạo lượt đặt' }} />
+        <Stack.Screen name="ticket-categories/index" options={{ title: 'Danh mục yêu cầu' }} />
+        <Stack.Screen name="ticket-categories/new" options={{ title: 'Thêm danh mục' }} />
+        <Stack.Screen name="ticket-categories/[id]" options={{ title: 'Danh mục yêu cầu' }} />
+        <Stack.Screen name="tickets/new" options={{ title: 'Tạo yêu cầu' }} />
         <Stack.Screen name="profile-password" options={{ title: 'Đổi mật khẩu' }} />
       </Stack.Protected>
     </Stack>

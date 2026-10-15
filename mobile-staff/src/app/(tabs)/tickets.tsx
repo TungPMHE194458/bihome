@@ -3,7 +3,7 @@ import { router, useLocalSearchParams } from 'expo-router'
 import { useState } from 'react'
 import { ActivityIndicator, FlatList, RefreshControl, StyleSheet, View } from 'react-native'
 import { BuildingBar, FilterChips, ListRow } from '@/components/common'
-import { EmptyState, ErrorView, Loading, TextField } from '@/components/ui'
+import { Button, EmptyState, ErrorView, Loading, TextField } from '@/components/ui'
 import { errorMessage } from '@/lib/api'
 import { useAuth } from '@/lib/auth'
 import { TICKET_PRIORITY, TICKET_STATUS } from '@/lib/constants'
@@ -31,7 +31,7 @@ const STATUSES: { value: StatusFilter; label: string }[] = [
 ]
 
 export default function TicketsScreen() {
-  const { me, buildingId } = useAuth()
+  const { me, buildingId, can } = useAuth()
   const params = useLocalSearchParams<{ filter?: Scope }>()
   const [scope, setScope] = useState<Scope>(params.filter ?? 'mine')
   const [status, setStatus] = useState<StatusFilter>('any')
@@ -81,6 +81,7 @@ export default function TicketsScreen() {
             />
             <FilterChips items={SCOPES} value={scope} onChange={setScope} />
             <FilterChips items={STATUSES} value={status} onChange={setStatus} />
+            {can('TICKET_WRITE') && <Button title="Tạo yêu cầu" icon="plus" onPress={() => router.push('/tickets/new')} />}
           </View>
         }
         renderItem={({ item: t }) => (
