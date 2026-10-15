@@ -10,6 +10,7 @@ import com.bihome.common.security.BuildingContext;
 import com.bihome.common.storage.FilePurpose;
 import com.bihome.common.storage.FileService;
 import com.bihome.common.storage.ImageListResolver;
+import com.bihome.common.util.DailyCodeGenerator;
 import com.bihome.common.web.PageParams;
 import com.bihome.common.web.PageResponse;
 import com.bihome.common.web.SpecificationBuilder;
@@ -27,7 +28,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-/** Dịch vụ theo tòa nhà; mã duy nhất trong tòa (bỏ trống = DV + 4 số); loại dịch vụ mới chọn phải đang hoạt động. */
+/** Dịch vụ theo tòa nhà; mã duy nhất trong tòa (bỏ trống = tự sinh SP-yyMMdd-xxx); loại dịch vụ mới chọn phải đang hoạt động. */
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -49,6 +50,7 @@ public class ServiceOfferingService {
     private final ImageListResolver imageResolver;
     private final FileService fileService;
     private final EntityManager entityManager;
+    private final DailyCodeGenerator codes;
 
     public PageResponse<ServiceDtos.Response> list(ServiceDtos.Filter f, PageParams pageParams) {
         Optional<Set<Long>> scope = buildingService.listScope(f.buildingId());
@@ -157,8 +159,7 @@ public class ServiceOfferingService {
             if (existing != null) {
                 return existing.getCode();
             }
-            long next = Optional.ofNullable(services.findMaxGeneratedNumber(buildingId)).orElse(0L) + 1;
-            return "DV" + "%04d".formatted(next);
+            return codes.next("SP");
         }
         boolean taken = existing == null
                 ? services.existsByBuildingIdAndCode(buildingId, code)

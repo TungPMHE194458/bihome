@@ -115,7 +115,7 @@ export function ResidentFormDialog({ open, residentId, initialApartment, onClose
                 control={control}
                 label="Mã cư dân"
                 transform={(v) => v.toUpperCase()}
-                helperText={editing ? undefined : 'Bỏ trống để tự sinh (CD + 6 số)'}
+                helperText={editing ? undefined : 'Bỏ trống để tự sinh (CD-yyMMdd-xxx)'}
               />
               <FormTextField name="phone" control={control} label="Số điện thoại" required placeholder="vd 0912345678" />
               <FormTextField name="email" control={control} label="Email" />

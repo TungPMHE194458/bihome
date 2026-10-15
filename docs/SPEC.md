@@ -66,6 +66,37 @@ CÀI ĐẶT (icon rail)
 ### 1.4 Trạng thái dùng chung
 `ACTIVE` = Hoạt động (chip xanh) · `INACTIVE` = Không hoạt động / Ngừng hoạt động (chip xám).
 
+### 1.5 Quy chuẩn mã tự sinh
+
+Mọi mã giao dịch / hồ sơ tự sinh (bỏ trống trường "Mã" khi tạo) dùng chung một định dạng
+`{PREFIX}-yyMMdd-xxx` (ngày theo múi giờ `Asia/Ho_Chi_Minh`, số thứ tự `xxx` đệm 3 số trong ngày, từ số thứ 1000 thì
+không đệm) và một cơ chế sinh số dùng chung: `common/util/DailyCodeGenerator` (bảng `CODE_COUNTER(PREFIX, CODE_DATE,
+LAST_NO)`, khoá dòng bằng UPDATE trước rồi INSERT có hint `IGNORE_ROW_ON_DUPKEY_INDEX` nếu là lượt đầu của ngày —
+an toàn khi nhiều request tạo cùng lúc). Không entity nào có bảng đếm riêng.
+
+Prefix đang dùng:
+
+| Prefix | Dùng cho |
+|---|---|
+| `YC` | Yêu cầu hỗ trợ (`ticket/`) |
+| `DK` | Đăng ký tiện ích (`booking/`) |
+| `DV` | Đơn dịch vụ (`servicecatalog/ServiceOrder`) |
+| `SP` | Dịch vụ (`servicecatalog/ServiceOffering`) |
+| `GD` | Giao dịch (`transaction/FINANCIAL_TRANSACTION`) |
+| `SOS` | Cảnh báo SOS (`sos/`) |
+| `KK` | Kê khai từ cư dân (`declaration/`) |
+| `TB` | Thông báo phí (`feenotice/`) |
+| `PT` | Phiếu thu (`payment/`) |
+| `CD` | Cư dân (`resident/`) |
+| `TL` | Tài liệu (`document/`) |
+
+Mã có thể nhập tay thay cho tự sinh (vd nhập mã vật lý trên thẻ) thì không theo định dạng này — không ép định dạng
+`{PREFIX}-yyMMdd-xxx` lên các trường đó. Ba trường hợp **không** dùng quy chuẩn này vì là mã định danh vật lý / cấu
+trúc, không phải mã giao dịch tăng dần theo ngày:
+- **Số căn hộ** (Apartment) — số thật trên toà nhà, BQL nhập tay.
+- **Mã thẻ từ** (AccessCard) — mã in sẵn trên thẻ vật lý, BQL nhập tay.
+- **Mã voucher** (Voucher) — mã khuyến mãi do BQL tự đặt (có thể có ý nghĩa gợi nhớ), nhập tay.
+
 ---
 
 ## 2. Authentication
@@ -175,7 +206,7 @@ Số lượng hạng mục xe đang hoạt động được dùng để tính ph
 | Trường | Ghi chú |
 |---|---|
 | Ảnh đại diện [L] | |
-| Mã cư dân [U theo tòa][F] | tự sinh `CD` + 6 số nếu bỏ trống |
+| Mã cư dân [U theo tòa][F] | tự sinh `CD-yyMMdd-xxx` nếu bỏ trống (xem "Quy chuẩn mã tự sinh" ở mục 1) |
 | Họ và tên (*) [F][S][L] | |
 | Số điện thoại (*) [F][L] | định dạng VN, duy nhất trong tòa |
 | Email [F] | |
@@ -230,7 +261,7 @@ Quy tắc: kiểm tra trùng khung giờ vượt sức chứa, giới hạn lư�
 Tên (*) [U] (Vệ sinh, Sửa chữa, Giặt là, Chuyển nhà...) · Mô tả · Trạng thái · Ngày tạo.
 
 ### 5.5 Dịch vụ (`SERVICE`)
-Mã · Tên (*) · Loại dịch vụ (*) [F] · Đơn giá (*) · Đơn vị tính (lần, giờ, m², kg) · Mô tả · Ảnh · Trạng thái [F] · Ngày tạo.
+Mã (tự sinh `SP-yyMMdd-xxx` nếu bỏ trống) · Tên (*) · Loại dịch vụ (*) [F] · Đơn giá (*) · Đơn vị tính (lần, giờ, m², kg) · Mô tả · Ảnh · Trạng thái [F] · Ngày tạo.
 Có thể tạo "Đơn dịch vụ" cho căn hộ (số lượng × đơn giá) → sinh giao dịch.
 
 ### 5.6 Lịch sử giao dịch (`TRANSACTION`)
@@ -258,7 +289,7 @@ Chi tiết: mô tả, ảnh đính kèm, timeline (đổi trạng thái, phân c
 Tên (*) [U] (Nội quy, Hợp đồng mẫu, Biểu mẫu, Thông báo, Hướng dẫn...) · Mô tả · Màu chip · Trạng thái · Ngày tạo · Ngày cập nhật.
 
 ### 7.2 Tài liệu (`DOCUMENT`, `DOCUMENT_TAG`)
-Cột đúng như ảnh: **Mã** [F] (link xanh + icon loại file: DOCX/PDF/XLSX/ảnh; tự sinh số nếu bỏ trống) · **Tên tài liệu** (*) [F] · **Thẻ** [F] (tags, nhiều thẻ) · **Danh mục** (*) [F] (chip màu) · **Kích thước** (từ file, dạng "4 KB", "1.2 MB") · **Mô tả** [F] · **Ngày tạo** · **Ngày cập nhật** · **Tác vụ** (Xem trước · Tải xuống · Sửa · Thay file · Xoá).
+Cột đúng như ảnh: **Mã** [F] (link xanh + icon loại file: DOCX/PDF/XLSX/ảnh; tự sinh `TL-yyMMdd-xxx` nếu bỏ trống) · **Tên tài liệu** (*) [F] · **Thẻ** [F] (tags, nhiều thẻ) · **Danh mục** (*) [F] (chip màu) · **Kích thước** (từ file, dạng "4 KB", "1.2 MB") · **Mô tả** [F] · **Ngày tạo** · **Ngày cập nhật** · **Tác vụ** (Xem trước · Tải xuống · Sửa · Thay file · Xoá).
 Toolbar: Select **"Đối tượng"** = phạm vi hiển thị: `ALL_RESIDENTS` Toàn bộ cư dân · `OWNERS` Chủ sở hữu · `TENANTS` Người thuê · `MANAGEMENT` Nội bộ ban quản lý.
 File: pdf, doc(x), xls(x), ppt(x), jpg, png ≤ 20MB. Xem trước: PDF/ảnh hiển thị trong dialog, file khác chỉ tải xuống. Lưu phiên bản cũ khi thay file.
 

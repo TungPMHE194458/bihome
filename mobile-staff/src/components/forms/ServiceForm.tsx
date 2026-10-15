@@ -62,7 +62,7 @@ export function ServiceForm({ service, onSaved }: { service?: Service; onSaved: 
       {message && <Text style={{ color: colors.danger }}>{message}</Text>}
       <Text style={{ fontWeight: '700', color: colors.text }}>Ảnh dịch vụ</Text>
       <PhotoPicker value={images} onChange={setImages} purpose="SERVICE_IMAGE" max={20} />
-      <TextField label="Mã" value={code} onChangeText={(t) => setCode(t.toUpperCase())} placeholder="Bỏ trống để tự sinh DV0001..." error={errors.code} />
+      <TextField label="Mã" value={code} onChangeText={(t) => setCode(t.toUpperCase())} placeholder="Bỏ trống để tự sinh SP-yyMMdd-xxx" error={errors.code} />
       <TextField label="Tên dịch vụ *" value={name} onChangeText={setName} error={errors.name} />
       <ChipSelect
         label="Loại dịch vụ"

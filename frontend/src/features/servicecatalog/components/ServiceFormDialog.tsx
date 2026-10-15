@@ -97,7 +97,7 @@ export function ServiceFormDialog({ open, serviceId, onClose }: Props) {
             control={control}
             label="Mã dịch vụ"
             transform={(v) => v.toUpperCase()}
-            helperText={editing ? undefined : 'Bỏ trống để tự sinh (DV0001…)'}
+            helperText={editing ? undefined : 'Bỏ trống để tự sinh (SP-yyMMdd-xxx)'}
           />
           <FormSelect name="serviceTypeId" control={control} label="Loại dịch vụ" options={typeOptions} required />
           <FormSelect name="status" control={control} label="Trạng thái" options={AMENITY_STATUS_OPTIONS} required />

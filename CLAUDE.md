@@ -178,7 +178,7 @@ Giao diện tham khảo: màn hình "Danh sách tài liệu" (sidebar 2 tầng, 
   `AmenityConfig.priceFor` × (số người nếu PER_PERSON) − voucher. Huỷ: Chờ duyệt hoặc trước `freeCancelUntil` → trả
   voucher + huỷ khoản chưa thu / hoàn khoản đã thu; huỷ muộn giữ phí. `BookingCompletionJob` (15 phút) chuyển lượt đã
   duyệt hết giờ → Hoàn thành. Mã `DK-yyMMdd-xxx`, đơn dịch vụ `DV-…`, giao dịch `GD-…` từ `common/util/DailyCodeGenerator`
-  (bảng `CODE_COUNTER`, cùng kỹ thuật UPDATE khoá dòng + INSERT hint như mã yêu cầu).
+  dùng chung cho mọi entity có mã tự sinh (bảng `CODE_COUNTER`; xem "Quy chuẩn mã tự sinh" ở SPEC mục 1.5).
 - Voucher dùng thật: `voucher/VoucherRedemptionService` (`preview` cho form tính thử, `redeem` khoá dòng voucher + tăng
   `USED_COUNT`, `recordUsage` ghi `VOUCHER_USAGE`, `release` trả lượt). Hiệu lực theo ngày sử dụng; kiểm tra tòa, trạng
   thái, phạm vi, tiện ích/dịch vụ cụ thể, tổng lượt, giới hạn mỗi căn. `usedCount` không ghi lịch sử hoạt động.
@@ -201,7 +201,8 @@ Giao diện tham khảo: màn hình "Danh sách tài liệu" (sidebar 2 tầng, 
   về toast). FE `AmenityConfigPage` (`/amenity-configs?amenityId=`) + `WeeklySlotEditor`; `findOverlap` ở FE cùng
   định dạng thông báo với backend.
 - Dịch vụ: `SERVICE_TYPE` dùng chung mọi tòa (tên duy nhất, chặn xoá khi còn dịch vụ); `SERVICE` (entity
-  `ServiceOffering`) thuộc tòa, mã duy nhất trong tòa, bỏ trống thì tự sinh `DV%04d`; đơn giá VND nguyên + đơn vị tự do.
+  `ServiceOffering`) thuộc tòa, mã duy nhất trong tòa, bỏ trống thì tự sinh `SP-yyMMdd-xxx` (xem "Quy chuẩn mã tự sinh"
+  ở SPEC mục 1.5); đơn giá VND nguyên + đơn vị tự do.
 - Thẻ từ: `ACCESS_CARD` thuộc tòa, mã thẻ in hoa duy nhất toàn hệ thống. Luồng ở `AccessCardEnums.CardStatus`:
   Trong kho → (`POST /{id}/issue` Cấp thẻ) Đang dùng ⇄ Khoá → Báo mất / Thu hồi → Trong kho. Đang dùng / Khoá luôn gắn
   căn hộ (CHECK ở DB); Thu hồi / Trong kho bỏ gắn; Báo mất giữ người làm mất. Cư dân phải đang ở căn của thẻ; xe chỉ
@@ -215,8 +216,8 @@ Giao diện tham khảo: màn hình "Danh sách tài liệu" (sidebar 2 tầng, 
   dùng thì khoá mã / loại / giá trị / phạm vi / đối tượng và cấm xoá. Tiện ích / dịch vụ đang được voucher chỉ định thì
   không xoá được.
 - Yêu cầu hỗ trợ: `TICKET_CATEGORY` dùng chung mọi tòa (SLA phản hồi/xử lý theo giờ, người phụ trách mặc định chỉ
-  được gán nếu làm việc ở tòa của yêu cầu); `TICKET` thuộc tòa, mã `YC-yyMMdd-xxx` từ bảng đếm `TICKET_CODE_COUNTER`
-  (UPDATE khoá dòng + INSERT có hint `IGNORE_ROW_ON_DUPKEY_INDEX`). Luồng trạng thái ở `TicketEnums.TicketStatus`
+  được gán nếu làm việc ở tòa của yêu cầu); `TICKET` thuộc tòa, mã `YC-yyMMdd-xxx` từ `common/util/DailyCodeGenerator`
+  dùng chung (xem "Quy chuẩn mã tự sinh" ở SPEC mục 1.5). Luồng trạng thái ở `TicketEnums.TicketStatus`
   (FE có bản sao `NEXT_STATUSES` chỉ để gợi ý kéo thả); chuyển sang Đang xử lý/Hoàn thành khi chưa có người xử lý →
   tự giao cho người thao tác; Huỷ bắt buộc lý do; chỉ xoá yêu cầu Mới/Huỷ. Quá hạn = còn mở và quá hạn xử lý, hoặc
   Mới và quá hạn phản hồi (`Ticket.isOverdue` + `TicketSpecifications.overdue`); `TicketService.countOverdue` sẵn cho
@@ -229,7 +230,7 @@ Giao diện tham khảo: màn hình "Danh sách tài liệu" (sidebar 2 tầng, 
   `features/resident/components/ResidentPicker`, `ApartmentPicker` có `optional`. Kanban dùng HTML5 drag-and-drop
   (không thêm thư viện), có menu ⋮ trên thẻ làm cách thay thế bằng bàn phím.
 - Tài liệu: `DOCUMENT_CATEGORY` dùng chung mọi tòa (tên duy nhất toàn hệ thống, màu chip `#RRGGBB`; FE gọi với
-  `skipBuildingContext`); `DOCUMENT` thuộc tòa, mã bỏ trống = số tăng dần trong tòa, thẻ ở `DOCUMENT_TAG`
+  `skipBuildingContext`); `DOCUMENT` thuộc tòa, mã bỏ trống = tự sinh `TL-yyMMdd-xxx`, thẻ ở `DOCUMENT_TAG`
   (@ElementCollection, lọc bằng subquery), "Đối tượng" = `AUDIENCE`. Tệp: FE tải lên `POST /files` (purpose DOCUMENT)
   rồi gửi `fileId`; `FileService.requireOwnUpload` kiểm tra mục đích + người tải. "Thay file" chuyển tệp cũ sang
   `DOCUMENT_FILE_VERSION` và tăng `FILE_VERSION_NO`. Xem trước/tải qua `/documents/{id}/content` và

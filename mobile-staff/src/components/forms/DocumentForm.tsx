@@ -104,7 +104,7 @@ export function DocumentForm({ doc, onSaved }: { doc?: DocumentItem; onSaved: (d
         </View>
       )}
       <TextField label="Tên tài liệu *" value={name} onChangeText={setName} error={errors.name} />
-      <TextField label="Mã" value={code} onChangeText={(t) => setCode(t.toUpperCase())} autoCapitalize="characters" placeholder={editing ? undefined : 'Bỏ trống để tự sinh số'} />
+      <TextField label="Mã" value={code} onChangeText={(t) => setCode(t.toUpperCase())} autoCapitalize="characters" placeholder={editing ? undefined : 'Bỏ trống để tự sinh TL-yyMMdd-xxx'} />
       <SearchPicker
         label="Danh mục"
         required

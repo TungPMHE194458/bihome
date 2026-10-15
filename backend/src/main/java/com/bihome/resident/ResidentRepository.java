@@ -31,11 +31,6 @@ public interface ResidentRepository extends JpaRepository<Resident, Long>, JpaSp
     @Query("select r.code from Resident r where r.buildingId = :buildingId and r.code in :codes")
     List<String> findExistingCodes(@Param("buildingId") Long buildingId, @Param("codes") Collection<String> codes);
 
-    /** Mã tự sinh lớn nhất dạng CD + 6 số trong tòa (chuỗi cùng độ dài nên so sánh chuỗi là đúng thứ tự số). */
-    @Query(value = "SELECT MAX(CODE) FROM RESIDENT WHERE BUILDING_ID = :buildingId AND REGEXP_LIKE(CODE, '^CD[0-9]{6}$')",
-            nativeQuery = true)
-    String findMaxGeneratedCode(@Param("buildingId") Long buildingId);
-
     @Override
     @EntityGraph(attributePaths = "building")
     Page<Resident> findAll(Specification<Resident> spec, Pageable pageable);

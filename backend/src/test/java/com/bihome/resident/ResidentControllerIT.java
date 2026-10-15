@@ -20,6 +20,8 @@ import com.bihome.resident.ResidentEnums.ResidenceStatus;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.io.ByteArrayInputStream;
 import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -63,11 +65,12 @@ class ResidentControllerIT extends AbstractIT {
 
     @Test
     void createGeneratesCodeMasksIdInListAndFeedsApartmentAndBuildingStats() throws Exception {
+        String day = LocalDate.now(ZoneId.of("Asia/Ho_Chi_Minh")).format(DateTimeFormatter.ofPattern("yyMMdd"));
         Map<String, Object> body = residentBody("Nguyễn Văn An", "+84912345678", a1.getId(), "OWNER", true);
         body.put("idType", "CCCD");
         body.put("idNumber", "001 085 012 345");
         JsonNode created = json(create(body).andExpect(status().isCreated())
-                .andExpect(jsonPath("$.code").value("CD000001"))
+                .andExpect(jsonPath("$.code", Matchers.matchesPattern("CD-" + day + "-\\d{3,}")))
                 .andExpect(jsonPath("$.phone").value("0912345678"))
                 .andExpect(jsonPath("$.idNumber").value("001085012345"))
                 .andExpect(jsonPath("$.nationality").value("Việt Nam"))
@@ -78,7 +81,7 @@ class ResidentControllerIT extends AbstractIT {
                 .andExpect(jsonPath("$.apartments[0].householdHead").value(true))
                 .andReturn());
         create(residentBody("Trần Thị Bình", "0987654321", a1.getId(), "FAMILY", false))
-                .andExpect(jsonPath("$.code").value("CD000002"));
+                .andExpect(jsonPath("$.code", Matchers.matchesPattern("CD-" + day + "-\\d{3,}")));
 
         list(Map.of("sort", "fullName,asc"))
                 .andExpect(jsonPath("$.totalElements").value(2))
@@ -104,12 +107,15 @@ class ResidentControllerIT extends AbstractIT {
 
     @Test
     void phoneAndCodeAreUniquePerBuildingOnly() throws Exception {
-        create(residentBody("An", "0912345678", a1.getId(), "OWNER", false)).andExpect(status().isCreated());
+        String day = LocalDate.now(ZoneId.of("Asia/Ho_Chi_Minh")).format(DateTimeFormatter.ofPattern("yyMMdd"));
+        JsonNode first = json(create(residentBody("An", "0912345678", a1.getId(), "OWNER", false))
+                .andExpect(status().isCreated()).andReturn());
+        String code = first.get("code").asText();
         create(residentBody("An 2", "+84912345678", a2.getId(), "OWNER", false))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.errors[0].field").value("phone"));
         Map<String, Object> sameCode = residentBody("Bình", "0987654321", a2.getId(), "OWNER", false);
-        sameCode.put("code", "cd000001");
+        sameCode.put("code", code.toLowerCase());
         create(sameCode).andExpect(status().isConflict()).andExpect(jsonPath("$.errors[0].field").value("code"));
 
         Building other = createBuilding();
@@ -120,7 +126,7 @@ class ResidentControllerIT extends AbstractIT {
                         .content(objectMapper.writeValueAsString(
                                 residentBody("An", "0912345678", foreign.getId(), "OWNER", false))))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.code").value("CD000001"));
+                .andExpect(jsonPath("$.code", Matchers.matchesPattern("CD-" + day + "-\\d{3,}")));
     }
 
     @Test
@@ -295,11 +301,12 @@ class ResidentControllerIT extends AbstractIT {
                 .andExpect(jsonPath("$.rows[7].message").value("Ngày chuyển đến \"31/02/2024\" không đúng định dạng dd/MM/yyyy"));
         list(Map.of()).andExpect(jsonPath("$.totalElements").value(1));
 
+        String day = LocalDate.now(ZoneId.of("Asia/Ho_Chi_Minh")).format(DateTimeFormatter.ofPattern("yyMMdd"));
         importExcel(file, false)
                 .andExpect(jsonPath("$.imported").value(true))
                 .andExpect(jsonPath("$.succeeded").value(2))
-                .andExpect(jsonPath("$.rows[0].message").value("Đã nhập (CD000002)"))
-                .andExpect(jsonPath("$.rows[1].message").value("Đã nhập (CD000003)"));
+                .andExpect(jsonPath("$.rows[0].message", Matchers.matchesPattern("Đã nhập \\(CD-" + day + "-\\d{3,}\\)")))
+                .andExpect(jsonPath("$.rows[1].message", Matchers.matchesPattern("Đã nhập \\(CD-" + day + "-\\d{3,}\\)")));
         list(Map.of("keyword", "Nguyễn An"))
                 .andExpect(jsonPath("$.content[0].phone").value("0912345678"))
                 .andExpect(jsonPath("$.content[0].idNumberMasked").value("0010*****345"))

@@ -19,11 +19,6 @@ public interface DocumentRepository extends JpaRepository<Document, Long>, JpaSp
 
     boolean existsByFileId(Long fileId);
 
-    /** Số lớn nhất trong các mã chỉ gồm chữ số của tòa (mã tự sinh). */
-    @Query(value = "SELECT MAX(TO_NUMBER(CODE)) FROM DOCUMENT WHERE BUILDING_ID = :buildingId "
-            + "AND REGEXP_LIKE(CODE, '^[0-9]{1,9}$')", nativeQuery = true)
-    Long findMaxNumericCode(@Param("buildingId") Long buildingId);
-
     /** Thẻ đã dùng trong các tòa {@code buildingIds} khớp mẫu LIKE (gợi ý khi nhập thẻ). */
     @Query("select distinct t from Document d join d.tags t where d.buildingId in :buildingIds "
             + "and lower(t) like :pattern escape '\\' order by t")

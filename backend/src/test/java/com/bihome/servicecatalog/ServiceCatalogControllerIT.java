@@ -14,6 +14,8 @@ import com.bihome.voucher.VoucherRepository;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -53,12 +55,16 @@ class ServiceCatalogControllerIT extends AbstractIT {
 
     @Test
     void servicesGetGeneratedCodesAndBlockDeletingTheirType() throws Exception {
-        send(post("/api/v1/services"), serviceBody("")).andExpect(status().isCreated())
-                .andExpect(jsonPath("$.code").value("DV0001"))
+        String day = LocalDate.now(ZoneId.of("Asia/Ho_Chi_Minh")).format(DateTimeFormatter.ofPattern("yyMMdd"));
+        JsonNode first = json(send(post("/api/v1/services"), serviceBody("")).andExpect(status().isCreated())
+                .andExpect(jsonPath("$.code", Matchers.matchesPattern("SP-" + day + "-\\d{3,}")))
                 .andExpect(jsonPath("$.serviceTypeId").value(typeId))
-                .andExpect(jsonPath("$.unit").value("lần"));
-        send(post("/api/v1/services"), serviceBody(null)).andExpect(jsonPath("$.code").value("DV0002"));
-        send(post("/api/v1/services"), serviceBody("dv0001")).andExpect(status().isConflict());
+                .andExpect(jsonPath("$.unit").value("lần"))
+                .andReturn());
+        send(post("/api/v1/services"), serviceBody(null))
+                .andExpect(jsonPath("$.code", Matchers.matchesPattern("SP-" + day + "-\\d{3,}")));
+        send(post("/api/v1/services"), serviceBody(first.get("code").asText().toLowerCase()))
+                .andExpect(status().isConflict());
 
         mvc.perform(delete("/api/v1/service-types/{id}", typeId).header(HttpHeaders.AUTHORIZATION, bearer(token)))
                 .andExpect(status().isConflict())

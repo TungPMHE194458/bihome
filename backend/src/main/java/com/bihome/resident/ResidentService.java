@@ -21,6 +21,7 @@ import com.bihome.common.security.BuildingContext;
 import com.bihome.common.storage.FileAttachmentRepository;
 import com.bihome.common.storage.FilePurpose;
 import com.bihome.common.util.AppTime;
+import com.bihome.common.util.DailyCodeGenerator;
 import com.bihome.common.util.PhoneNumbers;
 import com.bihome.common.web.PageParams;
 import com.bihome.common.web.PageResponse;
@@ -65,7 +66,6 @@ public class ResidentService {
 
     static final int EXPORT_LIMIT = 10_000;
     static final String DEFAULT_NATIONALITY = "Việt Nam";
-    private static final String CODE_PREFIX = "CD";
     private static final Sort DEFAULT_SORT = Sort.by(Sort.Direction.DESC, "createdAt");
     private static final Map<String, String> SORTS = Map.of(
             "code", "code",
@@ -94,6 +94,7 @@ public class ResidentService {
     private final Validator validator;
     private final EntityManager entityManager;
     private final Clock clock;
+    private final DailyCodeGenerator codes;
 
     public PageResponse<ResidentDtos.Summary> list(ResidentDtos.Filter filter, PageParams pageParams) {
         return PageResponse.of(residents.findAll(spec(filter), pageParams.toPageable(DEFAULT_SORT, SORTS)),
@@ -144,7 +145,7 @@ public class ResidentService {
         resident.setAppAccountStatus(AppAccountStatus.NONE);
         String code = ResidentExcel.normalizeCode(req.code());
         if (code.isEmpty()) {
-            code = formatCode(nextCodeNumber(buildingId));
+            code = codes.next("CD");
         } else if (residents.existsByBuildingIdAndCode(buildingId, code)) {
             throw duplicateCode();
         }
@@ -314,7 +315,6 @@ public class ResidentService {
             return ImportResult.of(parsed.stream().map(p -> p.toResult(
                     p.error == null ? "Hợp lệ (chưa nhập vì file còn dòng lỗi)" : null)).toList(), false);
         }
-        int nextCode = nextCodeNumber(buildingId);
         Set<String> takenCodes = parsed.stream().filter(p -> p.error == null && !p.code.isEmpty())
                 .map(p -> p.code).collect(Collectors.toSet());
         List<Resident> toSave = new ArrayList<>();
@@ -324,7 +324,7 @@ public class ResidentService {
             }
             if (p.code.isEmpty()) {
                 do {
-                    p.code = formatCode(nextCode++);
+                    p.code = codes.next("CD");
                 } while (takenCodes.contains(p.code));
             }
             Resident resident = new Resident();
@@ -565,16 +565,6 @@ public class ResidentService {
         if (living) {
             throw BusinessException.field(ErrorCode.CONFLICT, prefix + "apartmentId", "Cư dân đang ở căn hộ này.");
         }
-    }
-
-    /** Số kế tiếp cho mã tự sinh CD + 6 số trong tòa. */
-    private int nextCodeNumber(Long buildingId) {
-        String max = residents.findMaxGeneratedCode(buildingId);
-        return max == null ? 1 : Integer.parseInt(max.substring(CODE_PREFIX.length())) + 1;
-    }
-
-    private static String formatCode(int number) {
-        return CODE_PREFIX + "%06d".formatted(number);
     }
 
     private LocalDate today() {

@@ -19,6 +19,9 @@ import com.bihome.common.storage.FileAttachmentRepository;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -67,11 +70,12 @@ class DocumentControllerIT extends AbstractIT {
     }
 
     @Test
-    void createGeneratesNumericCodesAndReturnsFileAndCategoryInfo() throws Exception {
+    void createGeneratesCodesAndReturnsFileAndCategoryInfo() throws Exception {
+        String day = LocalDate.now(ZoneId.of("Asia/Ho_Chi_Minh")).format(DateTimeFormatter.ofPattern("yyMMdd"));
         Map<String, Object> body = documentBody(upload("noi-quy.pdf", PDF), "Nội quy cư dân");
         body.put("tags", List.of(" nội  quy ", "Nội quy", "PCCC"));
         create(body).andExpect(status().isCreated())
-                .andExpect(jsonPath("$.code").value("1"))
+                .andExpect(jsonPath("$.code", Matchers.matchesPattern("TL-" + day + "-\\d{3,}")))
                 .andExpect(jsonPath("$.buildingId").value(tower.getId()))
                 .andExpect(jsonPath("$.fileName").value("noi-quy.pdf"))
                 .andExpect(jsonPath("$.fileSize").value(PDF.length))
@@ -79,7 +83,8 @@ class DocumentControllerIT extends AbstractIT {
                 .andExpect(jsonPath("$.categoryColor").value("#DC2626"))
                 .andExpect(jsonPath("$.fileVersionNo").value(1))
                 .andExpect(jsonPath("$.tags", Matchers.contains("nội quy", "PCCC")));
-        create(documentBody(upload("mau.png", PNG), "Ảnh mẫu")).andExpect(jsonPath("$.code").value("2"));
+        create(documentBody(upload("mau.png", PNG), "Ảnh mẫu"))
+                .andExpect(jsonPath("$.code", Matchers.matchesPattern("TL-" + day + "-\\d{3,}")));
 
         Map<String, Object> custom = documentBody(upload("hd.pdf", PDF), "Hợp đồng");
         custom.put("code", "hd-01");

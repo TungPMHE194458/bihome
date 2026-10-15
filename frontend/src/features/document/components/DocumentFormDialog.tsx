@@ -109,7 +109,7 @@ export function DocumentFormDialog({ open, documentId, onClose }: Props) {
             control={control}
             label="Mã"
             transform={(v) => v.toUpperCase()}
-            helperText={editing ? undefined : 'Bỏ trống để tự sinh số'}
+            helperText={editing ? undefined : 'Bỏ trống để tự sinh (TL-yyMMdd-xxx)'}
           />
           <FormSelect name="categoryId" control={control} label="Danh mục" options={categories} required />
           <FormSelect name="audience" control={control} label="Đối tượng" options={AUDIENCE_OPTIONS} required />

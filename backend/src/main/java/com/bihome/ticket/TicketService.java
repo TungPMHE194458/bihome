@@ -11,7 +11,7 @@ import com.bihome.common.security.AuthUser;
 import com.bihome.common.security.BuildingContext;
 import com.bihome.common.storage.FilePurpose;
 import com.bihome.common.storage.FileService;
-import com.bihome.common.util.AppTime;
+import com.bihome.common.util.DailyCodeGenerator;
 import com.bihome.common.web.PageParams;
 import com.bihome.common.web.PageResponse;
 import com.bihome.resident.Resident;
@@ -24,9 +24,7 @@ import com.bihome.user.AppUser;
 import com.bihome.user.AppUserRepository;
 import jakarta.persistence.EntityManager;
 import java.time.Clock;
-import java.time.LocalDate;
 import java.time.OffsetDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumMap;
@@ -63,7 +61,6 @@ public class TicketService {
             "status", "status",
             "createdAt", "createdAt",
             "updatedAt", "updatedAt");
-    private static final DateTimeFormatter CODE_DAY = DateTimeFormatter.ofPattern("yyMMdd");
     private static final Map<TicketStatus, String> STATUS_LABELS = new EnumMap<>(Map.of(
             TicketStatus.NEW, "Mới",
             TicketStatus.RECEIVED, "Đã tiếp nhận",
@@ -86,6 +83,7 @@ public class TicketService {
     private final TicketNotifier notifier;
     private final EntityManager entityManager;
     private final Clock clock;
+    private final DailyCodeGenerator codes;
 
     public PageResponse<TicketDtos.Summary> list(TicketDtos.Filter filter, PageParams pageParams) {
         return PageResponse.of(tickets.findAll(spec(filter, filter.status()), pageParams.toPageable(DEFAULT_SORT, SORTS)),
@@ -143,7 +141,7 @@ public class TicketService {
 
         Ticket ticket = new Ticket();
         ticket.setBuildingId(buildingId);
-        ticket.setCode(nextCode());
+        ticket.setCode(codes.next("YC"));
         ticket.setStatus(TicketStatus.NEW);
         applyDetails(ticket, req, apartment, category);
         Long assigneeId = req.assigneeId();
@@ -383,17 +381,6 @@ public class TicketService {
         entry.setContent(content);
         ticket.getEntries().add(entry);
         return entry;
-    }
-
-    /** Mã YC-yyMMdd-xxx (ngày theo giờ Việt Nam); khoá dòng đếm của ngày tới khi commit. */
-    String nextCode() {
-        String day = LocalDate.now(clock.withZone(AppTime.ZONE)).format(CODE_DAY);
-        if (tickets.incrementCodeCounter(day) == 0) {
-            tickets.insertCodeCounterIfAbsent(day);
-            tickets.incrementCodeCounter(day);
-        }
-        long no = tickets.currentCodeCounter(day);
-        return "YC-" + day + "-" + (no < 1000 ? "%03d".formatted(no) : Long.toString(no));
     }
 
     /**

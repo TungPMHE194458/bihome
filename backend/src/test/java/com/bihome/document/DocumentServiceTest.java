@@ -18,6 +18,7 @@ import com.bihome.common.security.AuthUser;
 import com.bihome.common.security.BuildingContext;
 import com.bihome.common.storage.FilePurpose;
 import com.bihome.common.storage.FileService;
+import com.bihome.common.util.DailyCodeGenerator;
 import com.bihome.document.dto.DocumentDtos;
 import jakarta.persistence.EntityManager;
 import java.util.List;
@@ -44,6 +45,7 @@ class DocumentServiceTest {
     @Mock FileService fileService;
     @Mock DocumentMapper mapper;
     @Mock EntityManager entityManager;
+    @Mock DailyCodeGenerator codes;
 
     @InjectMocks
     DocumentService service;
@@ -84,13 +86,13 @@ class DocumentServiceTest {
     }
 
     @Test
-    void createGeneratesTheNextNumberAndNormalizesTags() {
-        when(documents.findMaxNumericCode(5L)).thenReturn(41L);
+    void createGeneratesTheNextCodeAndNormalizesTags() {
+        when(codes.next("TL")).thenReturn("TL-261015-042");
 
         service.create(request(" ", List.of(" nội  quy ", "Nội quy", "PCCC", " "), 100L), ME);
 
         Document d = saved();
-        assertThat(d.getCode()).isEqualTo("42");
+        assertThat(d.getCode()).isEqualTo("TL-261015-042");
         assertThat(d.getBuildingId()).isEqualTo(5L);
         assertThat(d.getName()).isEqualTo("Nội quy cư dân");
         assertThat(d.getDescription()).isNull();
@@ -100,9 +102,10 @@ class DocumentServiceTest {
     }
 
     @Test
-    void firstGeneratedCodeIsOneAndCustomCodesAreUppercased() {
+    void blankCodeAsksTheSharedGeneratorAndCustomCodesAreUppercased() {
+        when(codes.next("TL")).thenReturn("TL-261015-001");
         service.create(request(null, List.of(), 100L), ME);
-        assertThat(saved().getCode()).isEqualTo("1");
+        assertThat(saved().getCode()).isEqualTo("TL-261015-001");
     }
 
     @Test

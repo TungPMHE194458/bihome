@@ -9,6 +9,7 @@ import com.bihome.common.security.AuthUser;
 import com.bihome.common.security.BuildingContext;
 import com.bihome.common.storage.FilePurpose;
 import com.bihome.common.storage.FileService;
+import com.bihome.common.util.DailyCodeGenerator;
 import com.bihome.common.web.PageParams;
 import com.bihome.common.web.PageResponse;
 import com.bihome.common.web.SpecificationBuilder;
@@ -31,7 +32,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Tài liệu thuộc phạm vi tòa nhà. Mã tự sinh số tăng dần nếu bỏ trống; danh mục mới chọn phải đang hoạt động;
+ * Tài liệu thuộc phạm vi tòa nhà. Mã tự sinh TL-yyMMdd-xxx nếu bỏ trống; danh mục mới chọn phải đang hoạt động;
  * thay tệp thì tệp cũ được lưu lại thành một phiên bản.
  */
 @Service
@@ -39,7 +40,6 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class DocumentService {
 
-    static final int MAX_CODE_NUMBER = 999_999_999;
     private static final int TAG_SUGGESTIONS = 20;
     private static final Sort DEFAULT_SORT = Sort.by(Sort.Direction.DESC, "createdAt");
     private static final Map<String, String> SORTS = Map.of(
@@ -59,6 +59,7 @@ public class DocumentService {
     private final FileService fileService;
     private final DocumentMapper mapper;
     private final EntityManager entityManager;
+    private final DailyCodeGenerator codes;
 
     public PageResponse<DocumentDtos.Response> list(DocumentDtos.Filter filter, PageParams pageParams) {
         return PageResponse.of(documents.findAll(
@@ -209,18 +210,14 @@ public class DocumentService {
         return result;
     }
 
-    /** Mã đã chuẩn hoá (in hoa); bỏ trống khi tạo = số kế tiếp, khi sửa = giữ mã cũ. */
+    /** Mã đã chuẩn hoá (in hoa); bỏ trống khi tạo = tự sinh TL-yyMMdd-xxx, khi sửa = giữ mã cũ. */
     private String resolveCode(Long buildingId, String requested, Document existing) {
         String code = requested == null ? "" : requested.trim().toUpperCase(Locale.ROOT);
         if (code.isEmpty()) {
             if (existing != null) {
                 return existing.getCode();
             }
-            long max = Optional.ofNullable(documents.findMaxNumericCode(buildingId)).orElse(0L);
-            if (max >= MAX_CODE_NUMBER) {
-                throw BusinessException.field(ErrorCode.VALIDATION_ERROR, "code", "Không tự sinh được mã, vui lòng nhập mã.");
-            }
-            return Long.toString(max + 1);
+            return codes.next("TL");
         }
         boolean taken = existing == null
                 ? documents.existsByBuildingIdAndCode(buildingId, code)

@@ -16,6 +16,7 @@ import com.bihome.common.exception.ErrorCode;
 import com.bihome.common.security.AuthUser;
 import com.bihome.common.security.BuildingContext;
 import com.bihome.common.storage.FileService;
+import com.bihome.common.util.DailyCodeGenerator;
 import com.bihome.resident.ResidentService;
 import com.bihome.ticket.TicketEnums.EntryType;
 import com.bihome.ticket.TicketEnums.TicketChannel;
@@ -56,6 +57,7 @@ class TicketServiceTest {
     @Mock TicketMapper mapper;
     @Mock TicketNotifier notifier;
     @Mock EntityManager entityManager;
+    @Mock DailyCodeGenerator codes;
 
     TicketService service;
     TicketCategory category;
@@ -64,7 +66,7 @@ class TicketServiceTest {
     void setUp() {
         Clock clock = Clock.fixed(NOW, ZoneId.of("Asia/Ho_Chi_Minh"));
         service = new TicketService(tickets, entries, categoryService, apartmentService, residentService, buildingService,
-                buildingContext, fileService, users, mapper, notifier, entityManager, clock);
+                buildingContext, fileService, users, mapper, notifier, entityManager, clock, codes);
         category = new TicketCategory();
         category.setId(3L);
         category.setStatus(ActiveStatus.ACTIVE);
@@ -73,8 +75,7 @@ class TicketServiceTest {
         lenient().when(categoryService.require(3L)).thenReturn(category);
         lenient().when(buildingContext.requireBuildingId()).thenReturn(5L);
         lenient().when(buildingService.canAccess(5L)).thenReturn(true);
-        lenient().when(tickets.incrementCodeCounter("261011")).thenReturn(1);
-        lenient().when(tickets.currentCodeCounter("261011")).thenReturn(4L);
+        lenient().when(codes.next("YC")).thenReturn("YC-261011-004");
         // Lưu yêu cầu mới thì gán id để service đọc lại được sau khi ghi.
         lenient().when(tickets.saveAndFlush(any(Ticket.class))).thenAnswer(inv -> {
             Ticket t = inv.getArgument(0);
@@ -153,12 +154,11 @@ class TicketServiceTest {
     }
 
     @Test
-    void firstTicketOfTheDayCreatesTheCounterRow() {
-        when(tickets.incrementCodeCounter("261011")).thenReturn(0, 1);
-        when(tickets.currentCodeCounter("261011")).thenReturn(1L);
+    void createAsksTheSharedGeneratorForAYcCode() {
+        service.create(request(null), ME);
 
-        assertThat(service.nextCode()).isEqualTo("YC-261011-001");
-        verify(tickets).insertCodeCounterIfAbsent("261011");
+        verify(codes).next("YC");
+        assertThat(saved().getCode()).isEqualTo("YC-261011-004");
     }
 
     @Test

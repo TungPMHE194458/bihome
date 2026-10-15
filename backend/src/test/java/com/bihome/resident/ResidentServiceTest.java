@@ -23,6 +23,7 @@ import com.bihome.common.exception.ErrorCode;
 import com.bihome.common.security.AuthUser;
 import com.bihome.common.security.BuildingContext;
 import com.bihome.common.storage.FileAttachmentRepository;
+import com.bihome.common.util.DailyCodeGenerator;
 import com.bihome.resident.ResidentEnums.IdDocumentType;
 import com.bihome.resident.ResidentEnums.Relationship;
 import com.bihome.resident.ResidentEnums.ResidenceStatus;
@@ -73,6 +74,7 @@ class ResidentServiceTest {
     @Mock ServiceOrderRepository serviceOrders;
     @Mock FinancialTransactionRepository transactions;
     @Mock SurveyResponseRepository surveyResponses;
+    @Mock DailyCodeGenerator codes;
 
     ResidentService service;
     Apartment apartment;
@@ -82,7 +84,7 @@ class ResidentServiceTest {
         Clock clock = Clock.fixed(Instant.parse("2026-10-11T03:00:00Z"), ZoneId.of("Asia/Ho_Chi_Minh"));
         service = new ResidentService(residents, links, tickets, accessCardService, accessCards, bookings, serviceOrders,
                 transactions, surveyResponses, apartmentService, apartments, buildingService, buildingContext,
-                files, mapper, validator, entityManager, clock);
+                files, mapper, validator, entityManager, clock, codes);
         apartment = new Apartment();
         apartment.setId(10L);
         apartment.setBuildingId(5L);
@@ -132,12 +134,12 @@ class ResidentServiceTest {
 
     @Test
     void createGeneratesTheNextCodeNormalizesFieldsAndAddsALivingLink() {
-        when(residents.findMaxGeneratedCode(5L)).thenReturn("CD000007");
+        when(codes.next("CD")).thenReturn("CD-261011-008");
 
         service.create(request("", "001085012345", link(ResidentRole.OWNER, false, null)), ME);
 
         Resident resident = saved();
-        assertThat(resident.getCode()).isEqualTo("CD000008");
+        assertThat(resident.getCode()).isEqualTo("CD-261011-008");
         assertThat(resident.getBuildingId()).isEqualTo(5L);
         assertThat(resident.getFullName()).isEqualTo("Nguyễn Văn An");
         assertThat(resident.getPhone()).isEqualTo("0912345678");
@@ -152,10 +154,12 @@ class ResidentServiceTest {
     }
 
     @Test
-    void firstGeneratedCodeIsCd000001() {
+    void createAsksTheSharedGeneratorForACdCode() {
+        when(codes.next("CD")).thenReturn("CD-261011-001");
+
         service.create(request(null, null, link(ResidentRole.TENANT, false, null)), ME);
 
-        assertThat(saved().getCode()).isEqualTo("CD000001");
+        assertThat(saved().getCode()).isEqualTo("CD-261011-001");
     }
 
     @Test

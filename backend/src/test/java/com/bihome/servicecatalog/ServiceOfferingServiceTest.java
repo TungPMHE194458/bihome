@@ -15,6 +15,7 @@ import com.bihome.common.exception.ErrorCode;
 import com.bihome.common.security.BuildingContext;
 import com.bihome.common.storage.FileService;
 import com.bihome.common.storage.ImageListResolver;
+import com.bihome.common.util.DailyCodeGenerator;
 import com.bihome.servicecatalog.dto.ServiceDtos;
 import jakarta.persistence.EntityManager;
 import java.lang.reflect.Field;
@@ -38,6 +39,7 @@ class ServiceOfferingServiceTest {
     @Mock ImageListResolver imageResolver;
     @Mock FileService fileService;
     @Mock EntityManager entityManager;
+    @Mock DailyCodeGenerator codes;
 
     @InjectMocks
     ServiceOfferingService service;
@@ -73,14 +75,14 @@ class ServiceOfferingServiceTest {
     }
 
     @Test
-    void blankCodeGeneratesTheNextDvNumber() {
-        when(services.findMaxGeneratedNumber(5L)).thenReturn(12L);
+    void blankCodeAsksTheSharedGeneratorForAnSpCode() {
+        when(codes.next("SP")).thenReturn("SP-261011-013");
 
         service.create(request(""), null);
 
         ArgumentCaptor<ServiceOffering> saved = ArgumentCaptor.forClass(ServiceOffering.class);
         verify(services).saveAndFlush(saved.capture());
-        assertThat(saved.getValue().getCode()).isEqualTo("DV0013");
+        assertThat(saved.getValue().getCode()).isEqualTo("SP-261011-013");
         assertThat(saved.getValue().getName()).isEqualTo("Vệ sinh căn hộ");
         assertThat(saved.getValue().getUnit()).isEqualTo("giờ");
         assertThat(saved.getValue().getDescription()).isNull();

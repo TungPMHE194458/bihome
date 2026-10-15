@@ -23,11 +23,6 @@ public interface ServiceOfferingRepository
 
     List<ServiceOffering> findByIdIn(Collection<Long> ids);
 
-    /** Số lớn nhất trong mã tự sinh DV + 4 số của tòa. */
-    @Query(value = "SELECT MAX(TO_NUMBER(SUBSTR(CODE, 3))) FROM SERVICE WHERE BUILDING_ID = :buildingId "
-            + "AND REGEXP_LIKE(CODE, '^DV[0-9]{4,9}$')", nativeQuery = true)
-    Long findMaxGeneratedNumber(@Param("buildingId") Long buildingId);
-
     @Query(value = "SELECT COUNT(*) FROM VOUCHER_SERVICE WHERE SERVICE_ID = :id", nativeQuery = true)
     long countVoucherTargets(@Param("id") Long id);
 

@@ -55,7 +55,7 @@ export interface ServiceOption {
 }
 
 export interface ServiceRequest {
-  /** null = tự sinh DV0001... */
+  /** null = tự sinh SP-yyMMdd-xxx. */
   code: string | null
   name: string
   serviceTypeId: number
