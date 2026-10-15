@@ -51,4 +51,13 @@ public final class ResidentAuthDtos {
     /** Mật khẩu tạm chỉ trả một lần khi tạo / đặt lại. */
     public record TemporaryPasswordResponse(String phone, String temporaryPassword) {
     }
+
+    /** Một thiết bị đang đăng nhập (phiên chưa thu hồi, chưa hết hạn). */
+    public record SessionResponse(Long id, String deviceName, OffsetDateTime createdAt, OffsetDateTime expiresAt,
+                                   OffsetDateTime lastUsedAt) {
+    }
+
+    public record LoginHistoryResponse(Long id, OffsetDateTime createdAt, boolean success, String failureReason,
+                                       String ipAddress, String userAgent, String deviceName) {
+    }
 }

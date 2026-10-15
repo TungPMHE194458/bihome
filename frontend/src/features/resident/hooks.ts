@@ -12,6 +12,8 @@ export const residentKeys = {
   detail: (id: number) => [...residentKeys.all, 'detail', id] as const,
   byApartment: (apartmentId: number) => [...residentKeys.all, 'apartment', apartmentId] as const,
   appAccount: (id: number) => [...residentKeys.all, 'app-account', id] as const,
+  appSessions: (id: number) => [...residentKeys.all, 'app-sessions', id] as const,
+  appLoginHistory: (id: number, size: number) => [...residentKeys.all, 'app-login-history', id, size] as const,
 }
 
 export function useResidentList(params: ListParams) {
@@ -113,5 +115,31 @@ export function useAppAccountAction<T>(residentId: number, action: (id: number) 
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: residentKeys.all })
     },
+  })
+}
+
+/** Thiết bị đang đăng nhập app (phiên chưa thu hồi, chưa hết hạn); chỉ gọi khi cư dân đã có tài khoản. */
+export function useAppSessions(residentId: number, enabled: boolean) {
+  return useQuery({
+    queryKey: residentKeys.appSessions(residentId),
+    queryFn: () => residentApi.appSessions(residentId),
+    enabled,
+  })
+}
+
+export function useRevokeAppSession(residentId: number) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (sessionId: number) => residentApi.revokeAppSession(residentId, sessionId),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: residentKeys.appSessions(residentId) }),
+  })
+}
+
+/** Lịch sử đăng nhập app, mới nhất trước; size tăng dần khi bấm "Xem thêm" (giống AuditHistoryDrawer). */
+export function useAppLoginHistory(residentId: number, size: number, enabled: boolean) {
+  return useQuery({
+    queryKey: residentKeys.appLoginHistory(residentId, size),
+    queryFn: () => residentApi.appLoginHistory(residentId, { size, sort: 'id,desc' }),
+    enabled,
   })
 }

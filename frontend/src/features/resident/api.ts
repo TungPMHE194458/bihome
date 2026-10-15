@@ -1,6 +1,8 @@
 import type {
   AppAccount,
   AppAccountPassword,
+  AppLoginHistory,
+  AppSession,
   ApartmentMember,
   LinkRequest,
   ResidentDetail,
@@ -37,6 +39,12 @@ export const residentApi = {
   resetAppPassword: (id: number) =>
     http.post<AppAccountPassword>(`/residents/${id}/app-account/reset-password`).then((r) => r.data),
   deleteAppAccount: (id: number) => http.delete<void>(`/residents/${id}/app-account`),
+  appSessions: (id: number) => http.get<AppSession[]>(`/residents/${id}/app-account/sessions`).then((r) => r.data),
+  revokeAppSession: (id: number, sessionId: number) =>
+    http.post<void>(`/residents/${id}/app-account/sessions/${sessionId}/revoke`),
+  appLoginHistory: (id: number, params: ListParams) =>
+    http.get<PageResponse<AppLoginHistory>>(`/residents/${id}/app-account/login-history`, { params })
+      .then((r) => r.data),
   exportExcel: (params: ListParams) => {
     const filters = Object.fromEntries(Object.entries(params).filter(([k]) => !['page', 'size', 'sort'].includes(k)))
     return downloadFromApi('/residents/export', filters, 'cu-dan.xlsx')

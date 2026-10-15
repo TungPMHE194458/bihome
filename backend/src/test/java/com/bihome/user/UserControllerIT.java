@@ -195,6 +195,32 @@ class UserControllerIT extends AbstractIT {
     }
 
     @Test
+    void sessionsListsBothDevicesAndRevokingOneLeavesTheOtherLoggedIn() throws Exception {
+        AppUser target = createUser(unique("staff"), "STAFF");
+        MvcResult deviceA = loginResult(target.getUsername(), PASSWORD);
+        MvcResult deviceB = loginResult(target.getUsername(), PASSWORD);
+        String refreshA = deviceA.getResponse().getCookie("bihome_refresh").getValue();
+        String refreshB = deviceB.getResponse().getCookie("bihome_refresh").getValue();
+
+        MvcResult list = send(get("/api/v1/users/{id}/sessions", target.getId()), null)
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(2))
+                .andReturn();
+        // Mới nhất trước: dòng đầu là deviceB.
+        long latestSessionId = json(list).get(0).get("id").asLong();
+
+        send(post("/api/v1/users/{id}/sessions/{sessionId}/revoke", target.getId(), latestSessionId), null)
+                .andExpect(status().isNoContent());
+        send(get("/api/v1/users/{id}/sessions", target.getId()), null)
+                .andExpect(jsonPath("$.length()").value(1));
+
+        mvc.perform(post("/api/v1/auth/refresh").cookie(new Cookie("bihome_refresh", refreshB)))
+                .andExpect(status().isUnauthorized());
+        mvc.perform(post("/api/v1/auth/refresh").cookie(new Cookie("bihome_refresh", refreshA)))
+                .andExpect(status().isOk());
+    }
+
+    @Test
     void adminCannotChangeOwnStatusOrResetOwnPassword() throws Exception {
         send(patch("/api/v1/users/{id}/status", admin.getId()), Map.of("status", "INACTIVE"))
                 .andExpect(status().isUnprocessableEntity())

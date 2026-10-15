@@ -11,6 +11,7 @@ import com.bihome.user.dto.UserUpdateRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.http.HttpStatus;
@@ -92,5 +93,20 @@ public class UserController {
     @PreAuthorize("hasAuthority('USER_WRITE')")
     public UserRequests.TemporaryPassword resetPassword(@PathVariable Long id, @AuthenticationPrincipal AuthUser actor) {
         return userService.resetPassword(id, actor);
+    }
+
+    @Operation(summary = "Thiết bị đang đăng nhập", description = "Phiên chưa thu hồi, chưa hết hạn; mới nhất trước.")
+    @GetMapping("/{id}/sessions")
+    @PreAuthorize("hasAuthority('USER_READ')")
+    public List<UserRequests.SessionResponse> sessions(@PathVariable Long id) {
+        return userService.listSessions(id);
+    }
+
+    @Operation(summary = "Đăng xuất một thiết bị", description = "Chỉ thu hồi phiên này, không ảnh hưởng thiết bị khác.")
+    @PostMapping("/{id}/sessions/{sessionId}/revoke")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @PreAuthorize("hasAuthority('USER_WRITE')")
+    public void revokeSession(@PathVariable Long id, @PathVariable Long sessionId) {
+        userService.revokeSession(id, sessionId);
     }
 }

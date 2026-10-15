@@ -127,7 +127,7 @@ trúc, không phải mã giao dịch tăng dần theo ngày:
 
 ### Màn hình
 - **Hồ sơ cá nhân** (`/profile`): đổi avatar (crop vuông), sửa thông tin profile; email/username chỉ đọc.
-- **Người dùng hệ thống** (`/settings/users`, chỉ SUPER_ADMIN): bảng cột Avatar, Tên đăng nhập [F], Họ tên [F], Email [F], SĐT, Vai trò [F], Tòa nhà phụ trách, Trạng thái [F], Đăng nhập gần nhất, Ngày tạo; tác vụ: sửa, gán vai trò/tòa nhà, đặt lại mật khẩu (sinh mật khẩu tạm, bắt đổi khi đăng nhập lần đầu), khoá/mở khoá.
+- **Người dùng hệ thống** (`/settings/users`, chỉ SUPER_ADMIN): bảng cột Avatar, Tên đăng nhập [F], Họ tên [F], Email [F], SĐT, Vai trò [F], Tòa nhà phụ trách, Trạng thái [F], Đăng nhập gần nhất, Ngày tạo; tác vụ: sửa, gán vai trò/tòa nhà, đặt lại mật khẩu (sinh mật khẩu tạm, bắt đổi khi đăng nhập lần đầu), khoá/mở khoá, **Thiết bị đang đăng nhập** (dialog: mỗi `REFRESH_TOKEN` chưa thu hồi, chưa hết hạn = một thiết bị; đăng xuất riêng từng thiết bị — đối xứng với tính năng cùng tên của tài khoản app cư dân ở mục 4.4).
 
 ---
 
@@ -226,6 +226,11 @@ Số lượng hạng mục xe đang hoạt động được dùng để tính ph
 
 Quy tắc: mỗi căn hộ tối đa 1 **chủ hộ chính** (`IS_PRIMARY` trong nhóm OWNER). "Chuyển đi" đặt ngày chuyển đi + `MOVED_OUT`, thu hồi thẻ từ đang gán.
 Chức năng: Import/Export Excel; danh sách cư dân theo căn hộ.
+Tài khoản app (panel trên trang chi tiết): ngoài tạo/khoá/mở khoá/đặt lại/xoá còn có **Thiết bị đang đăng nhập**
+(mỗi phiên refresh token chưa thu hồi, chưa hết hạn = một thiết bị; đăng xuất riêng từng thiết bị không ảnh hưởng
+thiết bị khác) và **Lịch sử đăng nhập app** (`RESIDENT_LOGIN_HISTORY`, ghi cả thành công và thất bại, đối xứng với
+Lịch sử đăng nhập của web/nhân viên nhưng xem theo `RESIDENT_READ`/`RESIDENT_WRITE` của tòa, không giới hạn Admin
+hệ thống).
 
 ### 4.5 Voucher (`VOUCHER`)
 Mã [U][F] · Tên (*) [F] · Loại giảm (`PERCENT` % / `AMOUNT` số tiền) · Giá trị (*) · Giảm tối đa · Áp dụng cho (Tiện ích / Dịch vụ / Tất cả) + danh sách cụ thể · Tổng số lượng · Đã dùng · Giới hạn mỗi căn hộ · Hiệu lực từ–đến (*) [F] · Trạng thái [F] · Ngày tạo.

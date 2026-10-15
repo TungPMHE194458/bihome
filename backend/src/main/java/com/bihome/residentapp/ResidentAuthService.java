@@ -1,5 +1,6 @@
 package com.bihome.residentapp;
 
+import com.bihome.auth.ClientInfo;
 import com.bihome.auth.TokenHashing;
 import com.bihome.common.exception.BusinessException;
 import com.bihome.common.exception.ErrorCode;
@@ -41,6 +42,7 @@ public class ResidentAuthService {
     private final ResidentAccountRepository accounts;
     private final ResidentRefreshTokenRepository refreshTokens;
     private final ResidentPushTokenRepository pushTokens;
+    private final ResidentLoginHistoryRepository loginHistory;
     private final ResidentRepository residents;
     private final JwtService jwtService;
     private final PasswordEncoder passwordEncoder;
@@ -52,12 +54,13 @@ public class ResidentAuthService {
     private final String dummyHash;
 
     public ResidentAuthService(ResidentAccountRepository accounts, ResidentRefreshTokenRepository refreshTokens,
-                               ResidentPushTokenRepository pushTokens, ResidentRepository residents, JwtService jwtService,
-                               PasswordEncoder passwordEncoder, SettingService settingService,
-                               ResidentAppProperties properties, Clock clock) {
+                               ResidentPushTokenRepository pushTokens, ResidentLoginHistoryRepository loginHistory,
+                               ResidentRepository residents, JwtService jwtService, PasswordEncoder passwordEncoder,
+                               SettingService settingService, ResidentAppProperties properties, Clock clock) {
         this.accounts = accounts;
         this.refreshTokens = refreshTokens;
         this.pushTokens = pushTokens;
+        this.loginHistory = loginHistory;
         this.residents = residents;
         this.jwtService = jwtService;
         this.passwordEncoder = passwordEncoder;
@@ -67,17 +70,20 @@ public class ResidentAuthService {
         this.dummyHash = passwordEncoder.encode(UUID.randomUUID().toString());
     }
 
-    /** Không rollback khi ném BusinessException để vẫn lưu số lần sai / thời điểm khoá. */
+    /** Không rollback khi ném BusinessException để vẫn lưu số lần sai / thời điểm khoá / lịch sử đăng nhập. */
     @Transactional(noRollbackFor = BusinessException.class)
-    public ResidentAuthDtos.TokenResponse login(ResidentAuthDtos.LoginRequest req) {
+    public ResidentAuthDtos.TokenResponse login(ResidentAuthDtos.LoginRequest req, ClientInfo client) {
         String phone = PhoneNumbers.normalize(req.phone());
+        String deviceName = trimToNull(req.deviceName());
         OffsetDateTime now = OffsetDateTime.now(clock);
         ResidentAccount account = accounts.findByPhone(phone).orElse(null);
         if (account == null) {
             passwordEncoder.matches(req.password(), dummyHash);
+            recordHistory(null, phone, false, "ACCOUNT_NOT_FOUND", deviceName, client, now);
             throw new BusinessException(ErrorCode.INVALID_CREDENTIALS, BAD_CREDENTIALS);
         }
         if (account.isTemporarilyLocked(now)) {
+            recordHistory(account.getId(), phone, false, "TEMPORARILY_LOCKED", deviceName, client, now);
             throw temporarilyLocked(account.getLockedUntil(), settingService.current().maxFailedLogins());
         }
         if (!passwordEncoder.matches(req.password(), account.getPasswordHash())) {
@@ -86,17 +92,26 @@ public class ResidentAuthService {
             if (failures >= policy.maxFailedLogins()) {
                 OffsetDateTime lockedUntil = now.plus(Duration.ofMinutes(policy.lockMinutes()));
                 accounts.recordFailedLogin(account.getId(), 0, lockedUntil);
+                recordHistory(account.getId(), phone, false, "LOCKED_AFTER_FAILURES", deviceName, client, now);
                 throw temporarilyLocked(lockedUntil, policy.maxFailedLogins());
             }
             accounts.recordFailedLogin(account.getId(), failures, null);
+            recordHistory(account.getId(), phone, false, "BAD_PASSWORD", deviceName, client, now);
             throw new BusinessException(ErrorCode.INVALID_CREDENTIALS, BAD_CREDENTIALS);
         }
         if (account.getStatus() == ResidentAccount.Status.LOCKED) {
+            recordHistory(account.getId(), phone, false, "LOCKED", deviceName, client, now);
             throw new BusinessException(ErrorCode.ACCOUNT_LOCKED, "Tài khoản app đã bị khoá. Vui lòng liên hệ Ban quản lý.");
         }
-        requireLiving(account);
+        try {
+            requireLiving(account);
+        } catch (BusinessException e) {
+            recordHistory(account.getId(), phone, false, "NOT_LIVING", deviceName, client, now);
+            throw e;
+        }
         accounts.recordSuccessfulLogin(account.getId(), now);
-        return issueTokens(account, trimToNull(req.deviceName()));
+        recordHistory(account.getId(), phone, true, null, deviceName, client, now);
+        return issueTokens(account, deviceName);
     }
 
     @Transactional(noRollbackFor = BusinessException.class)
@@ -192,6 +207,20 @@ public class ResidentAuthService {
     @Transactional
     public void unregisterPushToken(Long accountId, String token) {
         pushTokens.deleteByTokenAndAccount(token.trim(), accountId);
+    }
+
+    private void recordHistory(Long accountId, String phone, boolean success, String reason, String deviceName,
+                               ClientInfo client, OffsetDateTime now) {
+        ResidentLoginHistory history = new ResidentLoginHistory();
+        history.setAccountId(accountId);
+        history.setPhone(phone);
+        history.setSuccess(success);
+        history.setFailureReason(reason);
+        history.setIpAddress(client.ipAddress());
+        history.setUserAgent(client.userAgent());
+        history.setDeviceName(deviceName);
+        history.setCreatedAt(now);
+        loginHistory.save(history);
     }
 
     private void requireLiving(ResidentAccount account) {

@@ -60,3 +60,12 @@ export interface UserCreated {
   user: UserDetail
   temporaryPassword: string
 }
+
+/** Một thiết bị đang đăng nhập (phiên chưa thu hồi, chưa hết hạn). */
+export interface UserSession {
+  id: number
+  ipAddress?: string
+  userAgent?: string
+  createdAt: string
+  expiresAt: string
+}

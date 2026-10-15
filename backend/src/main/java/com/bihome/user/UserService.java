@@ -209,6 +209,20 @@ public class UserService {
         return new UserRequests.TemporaryPassword(temporaryPassword);
     }
 
+    public List<UserRequests.SessionResponse> listSessions(Long id) {
+        AppUser user = find(id);
+        return refreshTokens.listActive(user.getId()).stream()
+                .map(t -> new UserRequests.SessionResponse(t.getId(), t.getIpAddress(), t.getUserAgent(),
+                        t.getCreatedAt(), t.getExpiresAt()))
+                .toList();
+    }
+
+    @Transactional
+    public void revokeSession(Long id, Long sessionId) {
+        AppUser user = find(id);
+        refreshTokens.revokeOne(sessionId, user.getId(), "ADMIN_REVOKED");
+    }
+
     /**
      * Người không phải Admin hệ thống chỉ quản lý người dùng cùng ít nhất một tòa (không gồm Admin hệ thống) — tránh
      * xem / sửa tài khoản tòa khác.

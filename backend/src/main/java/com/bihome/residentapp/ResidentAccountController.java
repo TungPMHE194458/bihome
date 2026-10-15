@@ -1,9 +1,13 @@
 package com.bihome.residentapp;
 
+import com.bihome.common.web.PageParams;
+import com.bihome.common.web.PageResponse;
 import com.bihome.residentapp.dto.ResidentAuthDtos;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -66,5 +70,28 @@ public class ResidentAccountController {
     @PreAuthorize("hasAuthority('RESIDENT_WRITE')")
     public void delete(@PathVariable Long residentId) {
         service.delete(residentId);
+    }
+
+    @Operation(summary = "Thiết bị đang đăng nhập", description = "Phiên chưa thu hồi, chưa hết hạn; mới nhất trước.")
+    @GetMapping("/sessions")
+    @PreAuthorize("hasAuthority('RESIDENT_READ')")
+    public List<ResidentAuthDtos.SessionResponse> sessions(@PathVariable Long residentId) {
+        return service.listSessions(residentId);
+    }
+
+    @Operation(summary = "Đăng xuất một thiết bị", description = "Chỉ thu hồi phiên này, không ảnh hưởng thiết bị khác.")
+    @PostMapping("/sessions/{sessionId}/revoke")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @PreAuthorize("hasAuthority('RESIDENT_WRITE')")
+    public void revokeSession(@PathVariable Long residentId, @PathVariable Long sessionId) {
+        service.revokeSession(residentId, sessionId);
+    }
+
+    @Operation(summary = "Lịch sử đăng nhập app")
+    @GetMapping("/login-history")
+    @PreAuthorize("hasAuthority('RESIDENT_READ')")
+    public PageResponse<ResidentAuthDtos.LoginHistoryResponse> loginHistory(@PathVariable Long residentId,
+                                                                            @ParameterObject PageParams pageParams) {
+        return service.loginHistory(residentId, pageParams);
     }
 }

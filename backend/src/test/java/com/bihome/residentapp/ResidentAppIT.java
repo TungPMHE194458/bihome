@@ -126,6 +126,46 @@ class ResidentAppIT extends AbstractIT {
     }
 
     @Test
+    void sessionsListDevicesRevokeOneAndLoginHistoryRecordsEveryAttempt() throws Exception {
+        String temp = json(staff(post("/api/v1/residents/{id}/app-account", residentId), null))
+                .get("temporaryPassword").asText();
+
+        // Sai mật khẩu trước, rồi đăng nhập đúng từ hai thiết bị khác nhau.
+        app(post("/api/v1/resident/auth/login"), null,
+                Map.of("phone", phone, "password", "Sai@12345", "deviceName", "iPhone của An"))
+                .andExpect(status().isUnauthorized());
+        app(post("/api/v1/resident/auth/login"), null,
+                Map.of("phone", phone, "password", temp, "deviceName", "iPhone của An"))
+                .andExpect(status().isOk());
+        app(post("/api/v1/resident/auth/login"), null,
+                Map.of("phone", phone, "password", temp, "deviceName", "iPad của An"))
+                .andExpect(status().isOk());
+
+        JsonNode sessions = json(staff(get("/api/v1/residents/{id}/app-account/sessions", residentId), null)
+                .andExpect(status().isOk()));
+        assertThat(sessions.size()).isEqualTo(2);
+        assertThat(sessions.get(0).get("deviceName").asText()).isEqualTo("iPad của An");
+        assertThat(sessions.get(1).get("deviceName").asText()).isEqualTo("iPhone của An");
+        long iPhoneSessionId = sessions.get(1).get("id").asLong();
+
+        staff(post("/api/v1/residents/{id}/app-account/sessions/{sid}/revoke", residentId, iPhoneSessionId), null)
+                .andExpect(status().isNoContent());
+        staff(get("/api/v1/residents/{id}/app-account/sessions", residentId), null)
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].deviceName").value("iPad của An"));
+        staff(post("/api/v1/residents/{id}/app-account/sessions/{sid}/revoke", residentId, iPhoneSessionId), null)
+                .andExpect(status().isNotFound());
+
+        JsonNode history = json(staff(get("/api/v1/residents/{id}/app-account/login-history", residentId), null)
+                .andExpect(status().isOk())).get("content");
+        assertThat(history.size()).isEqualTo(3);
+        assertThat(history.get(0).get("success").asBoolean()).isTrue();
+        assertThat(history.get(0).get("deviceName").asText()).isEqualTo("iPad của An");
+        assertThat(history.get(2).get("success").asBoolean()).isFalse();
+        assertThat(history.get(2).get("failureReason").asText()).isEqualTo("BAD_PASSWORD");
+    }
+
+    @Test
     void ticketsBookingsSosAndInbox() throws Exception {
         String access = activate();
         long category = id(staff(post("/api/v1/ticket-categories"), Map.of("name", unique("Điện "), "responseSlaHours", 2,

@@ -151,3 +151,22 @@ export interface AppAccountPassword {
   phone: string
   temporaryPassword: string
 }
+
+/** Một thiết bị đang đăng nhập (phiên chưa thu hồi, chưa hết hạn). */
+export interface AppSession {
+  id: number
+  deviceName?: string
+  createdAt: string
+  expiresAt: string
+  lastUsedAt?: string
+}
+
+export interface AppLoginHistory {
+  id: number
+  createdAt: string
+  success: boolean
+  failureReason?: string
+  ipAddress?: string
+  userAgent?: string
+  deviceName?: string
+}

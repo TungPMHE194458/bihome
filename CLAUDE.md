@@ -37,6 +37,10 @@ Giao diện tham khảo: màn hình "Danh sách tài liệu" (sidebar 2 tầng, 
   căn hộ đã có đủ tab. README.md ở gốc repo. **App cư dân** (`mobile/`, Expo SDK 57) và **app nhân viên** (`mobile-staff/`) — xem mục bên dưới. Chưa làm:
   nhà cung cấp email / SMS thật (OTP quên mật khẩu app → liên hệ BQL), danh mục phường/xã theo tỉnh (Phường/Xã nhập tay),
   hạ tầng production (`docs/MOBILE_PLAN.md`). Mục "Dự án": không làm.
+  - **Nhắc lại sau (2026-10-15, chủ động hoãn theo yêu cầu):** OTP quên mật khẩu qua SMS/email thật — cả web/nhân viên
+    (`AuthService.forgotPassword` → `OtpNotifier`) và cư dân (không có OTP, chỉ BQL đặt lại) hiện chỉ có bản ghi log
+    (`LoggingOtpNotifier` / `LoggingMessageSender`), chưa nối nhà cung cấp SMS/email thật. Cần hỏi lại nhà cung cấp cụ
+    thể (SMTP công ty / Twilio / AWS SES cho email; Viettel / eSMS... cho SMS) và API key trước khi làm.
 - App cư dân: backend `residentapp/` (V170: `RESIDENT_ACCOUNT` đăng nhập bằng SĐT duy nhất toàn hệ thống,
   `RESIDENT_REFRESH_TOKEN` xoay vòng — dùng lại token cũ thu hồi mọi phiên, `RESIDENT_PUSH_TOKEN`, `RESIDENT_INBOX`).
   Chuỗi bảo mật riêng `ResidentSecurityConfig` (`@Order(1)`, `/api/v1/resident/**`): JWT `typ=resident` nên token cư
@@ -47,7 +51,18 @@ Giao diện tham khảo: màn hình "Danh sách tài liệu" (sidebar 2 tầng, 
   `BuildingContext.select` tòa của căn. Tệp: `/resident/files` (`ResidentFileService` — chỉ tệp mình tải, ảnh tòa /
   tiện ích / dịch vụ của tòa, ảnh căn mình, ảnh đại diện mình, tệp yêu cầu của căn mình trừ bình luận nội bộ).
   BQL cấp / khoá / mở khoá / đặt lại / xoá tài khoản ở `/residents/{id}/app-account` (đồng bộ
-  `RESIDENT.APP_ACCOUNT_STATUS`; FE `features/resident/components/AppAccountPanel` trên trang chi tiết cư dân). Hộp thư
+  `RESIDENT.APP_ACCOUNT_STATUS`; FE `features/resident/components/AppAccountPanel` trên trang chi tiết cư dân). Cùng
+  panel này còn **Thiết bị đang đăng nhập** (`GET/POST .../app-account/sessions[/{id}/revoke]`, liệt kê
+  `RESIDENT_REFRESH_TOKEN` chưa thu hồi/chưa hết hạn — mỗi lần làm mới tạo dòng mới nên đúng 1 dòng/thiết bị, đăng xuất
+  riêng 1 thiết bị không ảnh hưởng thiết bị khác) và **Lịch sử đăng nhập app** (V201 `RESIDENT_LOGIN_HISTORY`,
+  `.../app-account/login-history`, FE `LoginHistoryDrawer` — đối xứng với Lịch sử đăng nhập của web/nhân viên nhưng
+  theo `RESIDENT_READ`/`RESIDENT_WRITE` của tòa thay vì chỉ Admin hệ thống). `ResidentAuthService.login` ghi mọi lần
+  thử (thành công/thất bại) qua `ClientInfo` giống `AuthService`. Nhân viên có tính năng **Thiết bị đang đăng nhập**
+  đối xứng ở `/settings/users` (dialog, dùng `REFRESH_TOKEN` sẵn có, không cần migration — mỗi family refresh token
+  xoay vòng chỉ có đúng 1 dòng chưa thu hồi tại một thời điểm, đăng xuất 1 thiết bị = thu hồi cả family đó qua
+  `RefreshTokenService.revokeOne`); nhân viên **không** có lịch sử đăng nhập theo từng người (đã có "Lịch sử đăng
+  nhập" dùng chung ở `/settings/audit-logs`, chỉ Admin hệ thống). OTP SMS/email thật cho cả hai phía: xem mục "Chưa
+  làm" ở trên — chủ động hoãn theo yêu cầu, chưa chọn nhà cung cấp. Hộp thư
   `ResidentInboxService.toApartment/toBuilding/toResidents` (chỉ cư dân có tài khoản; push sau commit qua `PushSender` →
   Expo Push, tắt mặc định `bihome.resident-app.push-enabled`), được gọi khi: phát hành thông báo phí, ghi nhận thu tiền
   (`FeeNoticeService.applyPayment`), đổi trạng thái / BQL bình luận công khai yêu cầu (`TicketNotifier`), duyệt / từ

@@ -2,11 +2,13 @@ package com.bihome.auth;
 
 import com.bihome.common.exception.BusinessException;
 import com.bihome.common.exception.ErrorCode;
+import com.bihome.common.exception.NotFoundException;
 import com.bihome.common.security.JwtProperties;
 import java.security.SecureRandom;
 import java.time.Clock;
 import java.time.OffsetDateTime;
 import java.util.Base64;
+import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -81,6 +83,22 @@ public class RefreshTokenService {
     @Transactional
     public void revokeAllForUser(Long userId, String reason) {
         repository.revokeAllForUser(userId, OffsetDateTime.now(clock), reason);
+    }
+
+    /** Thiết bị đang đăng nhập (phiên chưa thu hồi, chưa hết hạn), mới nhất trước. */
+    @Transactional(readOnly = true)
+    public List<RefreshToken> listActive(Long userId) {
+        return repository.findByUserIdAndRevokedAtIsNullAndExpiresAtAfterOrderByCreatedAtDesc(userId,
+                OffsetDateTime.now(clock));
+    }
+
+    /** Đăng xuất một thiết bị cụ thể: thu hồi cả family (không rotate lại được nữa), không ảnh hưởng thiết bị khác. */
+    @Transactional
+    public void revokeOne(Long tokenId, Long userId, String reason) {
+        RefreshToken token = repository.findByIdAndUserId(tokenId, userId)
+                .filter(t -> t.getRevokedAt() == null)
+                .orElseThrow(() -> new NotFoundException("Không tìm thấy phiên đăng nhập này."));
+        repository.revokeFamily(token.getFamilyId(), OffsetDateTime.now(clock), reason);
     }
 
     @Transactional(readOnly = true)

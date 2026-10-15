@@ -3,6 +3,8 @@ package com.bihome.residentapp;
 import com.bihome.common.exception.BusinessException;
 import com.bihome.common.exception.ErrorCode;
 import com.bihome.common.exception.NotFoundException;
+import com.bihome.common.web.PageParams;
+import com.bihome.common.web.PageResponse;
 import com.bihome.resident.Resident;
 import com.bihome.resident.ResidentEnums.AppAccountStatus;
 import com.bihome.resident.ResidentService;
@@ -10,7 +12,10 @@ import com.bihome.residentapp.dto.ResidentAuthDtos;
 import com.bihome.user.TemporaryPasswordGenerator;
 import java.time.Clock;
 import java.time.OffsetDateTime;
+import java.util.List;
+import java.util.Set;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,6 +31,7 @@ public class ResidentAccountService {
 
     private final ResidentAccountRepository accounts;
     private final ResidentRefreshTokenRepository refreshTokens;
+    private final ResidentLoginHistoryRepository loginHistory;
     private final ResidentService residentService;
     private final PasswordEncoder passwordEncoder;
     private final TemporaryPasswordGenerator passwordGenerator;
@@ -113,6 +119,39 @@ public class ResidentAccountService {
         Resident resident = residentService.requireAccessible(residentId);
         accounts.delete(requireAccount(residentId));
         resident.setAppAccountStatus(AppAccountStatus.NONE);
+    }
+
+    /** Thiết bị đang đăng nhập (phiên chưa thu hồi, chưa hết hạn), mới nhất trước. */
+    public List<ResidentAuthDtos.SessionResponse> listSessions(Long residentId) {
+        residentService.requireAccessible(residentId);
+        ResidentAccount account = requireAccount(residentId);
+        return refreshTokens
+                .findByAccountIdAndRevokedAtIsNullAndExpiresAtAfterOrderByCreatedAtDesc(account.getId(),
+                        OffsetDateTime.now(clock))
+                .stream()
+                .map(t -> new ResidentAuthDtos.SessionResponse(t.getId(), t.getDeviceName(), t.getCreatedAt(),
+                        t.getExpiresAt(), t.getLastUsedAt()))
+                .toList();
+    }
+
+    /** Đăng xuất một thiết bị cụ thể, không ảnh hưởng các thiết bị khác đang dùng. */
+    @Transactional
+    public void revokeSession(Long residentId, Long sessionId) {
+        residentService.requireAccessible(residentId);
+        ResidentAccount account = requireAccount(residentId);
+        int updated = refreshTokens.revokeOne(sessionId, account.getId(), OffsetDateTime.now(clock));
+        if (updated == 0) {
+            throw new NotFoundException("Không tìm thấy phiên đăng nhập này.");
+        }
+    }
+
+    public PageResponse<ResidentAuthDtos.LoginHistoryResponse> loginHistory(Long residentId, PageParams pageParams) {
+        residentService.requireAccessible(residentId);
+        ResidentAccount account = requireAccount(residentId);
+        var page = loginHistory.findByAccountIdOrderByCreatedAtDesc(account.getId(),
+                pageParams.toPageable(Sort.by(Sort.Direction.DESC, "id"), Set.<String>of()));
+        return PageResponse.of(page, h -> new ResidentAuthDtos.LoginHistoryResponse(h.getId(), h.getCreatedAt(),
+                h.isSuccess(), h.getFailureReason(), h.getIpAddress(), h.getUserAgent(), h.getDeviceName()));
     }
 
     private ResidentAccount requireAccount(Long residentId) {

@@ -1,3 +1,4 @@
+import DevicesOutlinedIcon from '@mui/icons-material/DevicesOutlined'
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined'
 import LockOpenOutlinedIcon from '@mui/icons-material/LockOpenOutlined'
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined'
@@ -21,6 +22,7 @@ import type { UserStatus } from '@/features/auth/types'
 import { useBuildingOptions } from '@/features/building/hooks'
 import { TemporaryPasswordDialog } from '@/features/user/components/TemporaryPasswordDialog'
 import { UserFormDialog } from '@/features/user/components/UserFormDialog'
+import { UserSessionsDialog } from '@/features/user/components/UserSessionsDialog'
 import { USER_STATUS, USER_STATUS_OPTIONS } from '@/features/user/constants'
 import {
   useChangeUserStatus,
@@ -76,6 +78,7 @@ export function UserListPage() {
   const [form, setForm] = useState<{ open: boolean; id?: number }>({ open: false })
   const [statusAction, setStatusAction] = useState<StatusAction | null>(null)
   const [resetTarget, setResetTarget] = useState<UserSummary | null>(null)
+  const [sessionsTarget, setSessionsTarget] = useState<UserSummary | null>(null)
   const [password, setPassword] = useState<{
     username: string
     password: string
@@ -89,6 +92,11 @@ export function UserListPage() {
         label: 'Chỉnh sửa',
         icon: <EditOutlinedIcon fontSize="small" />,
         onClick: () => setForm({ open: true, id: u.id }),
+      },
+      {
+        label: 'Thiết bị đang đăng nhập',
+        icon: <DevicesOutlinedIcon fontSize="small" />,
+        onClick: () => setSessionsTarget(u),
       },
     ]
     // Không tự khoá / đặt lại mật khẩu cho chính mình (dùng Đổi mật khẩu).
@@ -312,6 +320,7 @@ export function UserListPage() {
         onConfirm={() => void submitReset()}
       />
       <TemporaryPasswordDialog value={password} onClose={() => setPassword(null)} />
+      <UserSessionsDialog user={sessionsTarget} onClose={() => setSessionsTarget(null)} />
     </>
   )
 }

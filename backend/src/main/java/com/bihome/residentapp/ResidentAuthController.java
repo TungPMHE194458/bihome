@@ -1,8 +1,10 @@
 package com.bihome.residentapp;
 
+import com.bihome.auth.ClientInfo;
 import com.bihome.residentapp.dto.ResidentAuthDtos;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -28,8 +30,9 @@ public class ResidentAuthController {
             description = "Trả access token (Bearer, chỉ dùng cho /api/v1/resident/**) và refresh token trong body. "
                     + "mustChangePassword = true: phải đổi mật khẩu tạm trước khi dùng các API khác.")
     @PostMapping("/login")
-    public ResidentAuthDtos.TokenResponse login(@Valid @RequestBody ResidentAuthDtos.LoginRequest request) {
-        return authService.login(request);
+    public ResidentAuthDtos.TokenResponse login(@Valid @RequestBody ResidentAuthDtos.LoginRequest request,
+                                                HttpServletRequest http) {
+        return authService.login(request, ClientInfo.from(http));
     }
 
     @Operation(summary = "Làm mới phiên", description = "Refresh token xoay vòng: token cũ hết hiệu lực ngay.")

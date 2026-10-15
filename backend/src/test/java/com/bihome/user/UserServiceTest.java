@@ -7,6 +7,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.bihome.auth.RefreshToken;
 import com.bihome.auth.RefreshTokenService;
 import com.bihome.building.BuildingRepository;
 import com.bihome.common.exception.BusinessException;
@@ -14,8 +15,10 @@ import com.bihome.common.exception.ErrorCode;
 import com.bihome.common.exception.FieldErrorItem;
 import com.bihome.common.security.AuthUser;
 import com.bihome.user.dto.UserCreateRequest;
+import com.bihome.user.dto.UserRequests;
 import jakarta.persistence.EntityManager;
 import java.time.Clock;
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -106,5 +109,37 @@ class UserServiceTest {
 
         assertThat(target.getStatus()).isEqualTo(UserStatus.LOCKED);
         verify(refreshTokens).revokeAllForUser(2L, "USER_LOCKED");
+    }
+
+    @Test
+    void listSessionsMapsActiveRefreshTokensOfTheUser() {
+        AppUser target = new AppUser();
+        target.setId(2L);
+        when(users.findById(2L)).thenReturn(Optional.of(target));
+        RefreshToken token = new RefreshToken();
+        token.setId(10L);
+        token.setIpAddress("127.0.0.1");
+        token.setUserAgent("okhttp");
+        token.setCreatedAt(OffsetDateTime.now());
+        token.setExpiresAt(OffsetDateTime.now().plusDays(1));
+        when(refreshTokens.listActive(2L)).thenReturn(List.of(token));
+
+        List<UserRequests.SessionResponse> sessions = service.listSessions(2L);
+
+        assertThat(sessions).singleElement().satisfies(s -> {
+            assertThat(s.id()).isEqualTo(10L);
+            assertThat(s.ipAddress()).isEqualTo("127.0.0.1");
+        });
+    }
+
+    @Test
+    void revokeSessionChecksTheUserOwnsItBeforeDelegating() {
+        AppUser target = new AppUser();
+        target.setId(2L);
+        when(users.findById(2L)).thenReturn(Optional.of(target));
+
+        service.revokeSession(2L, 10L);
+
+        verify(refreshTokens).revokeOne(10L, 2L, "ADMIN_REVOKED");
     }
 }

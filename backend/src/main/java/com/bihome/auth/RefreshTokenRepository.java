@@ -2,6 +2,7 @@ package com.bihome.auth;
 
 import jakarta.persistence.LockModeType;
 import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
@@ -16,6 +17,12 @@ public interface RefreshTokenRepository extends JpaRepository<RefreshToken, Long
     Optional<RefreshToken> findByTokenHashForUpdate(@Param("hash") String hash);
 
     Optional<RefreshToken> findByTokenHash(String hash);
+
+    /** Phiên đang hoạt động = chưa thu hồi và chưa hết hạn; mỗi family chỉ có đúng 1 dòng như vậy tại một thời điểm. */
+    List<RefreshToken> findByUserIdAndRevokedAtIsNullAndExpiresAtAfterOrderByCreatedAtDesc(Long userId,
+            OffsetDateTime now);
+
+    Optional<RefreshToken> findByIdAndUserId(Long id, Long userId);
 
     @Modifying
     @Query("update RefreshToken t set t.revokedAt = :now, t.revokeReason = :reason "

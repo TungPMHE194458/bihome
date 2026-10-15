@@ -5,6 +5,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
+import java.time.OffsetDateTime;
 import java.util.Set;
 
 /** Các request nhỏ của màn hình Người dùng hệ thống và Hồ sơ cá nhân. */
@@ -36,5 +37,10 @@ public final class UserRequests {
 
     public record Filter(String keyword, String username, String fullName, String email, String role,
                          UserStatus status) {
+    }
+
+    /** Một thiết bị đang đăng nhập (phiên chưa thu hồi, chưa hết hạn). */
+    public record SessionResponse(Long id, String ipAddress, String userAgent, OffsetDateTime createdAt,
+                                  OffsetDateTime expiresAt) {
     }
 }

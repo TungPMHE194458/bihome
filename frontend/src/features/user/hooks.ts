@@ -1,6 +1,13 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import type { RoleSummary, UserStatus } from '@/features/auth/types'
-import type { UserCreated, UserCreateRequest, UserDetail, UserSummary, UserUpdateRequest } from '@/features/user/types'
+import type {
+  UserCreated,
+  UserCreateRequest,
+  UserDetail,
+  UserSession,
+  UserSummary,
+  UserUpdateRequest,
+} from '@/features/user/types'
 import type { PageResponse } from '@/lib/api-types'
 import { http } from '@/lib/http'
 
@@ -32,6 +39,9 @@ export const userApi = {
     http.patch<UserDetail>(`/users/${id}/status`, { status }, opts).then((r) => r.data),
   resetPassword: (id: number) =>
     http.post<{ temporaryPassword: string }>(`/users/${id}/reset-password`, undefined, opts).then((r) => r.data),
+  sessions: (id: number) => http.get<UserSession[]>(`/users/${id}/sessions`, opts).then((r) => r.data),
+  revokeSession: (id: number, sessionId: number) =>
+    http.post<void>(`/users/${id}/sessions/${sessionId}/revoke`, undefined, opts),
 }
 
 export function useUserList(params: ListParams) {
@@ -89,4 +99,21 @@ export function useChangeUserStatus() {
 
 export function useResetPassword() {
   return useMutation({ mutationFn: (id: number) => userApi.resetPassword(id) })
+}
+
+/** Thiết bị đang đăng nhập (phiên chưa thu hồi, chưa hết hạn); chỉ gọi khi dialog đang mở. */
+export function useUserSessions(id: number, enabled: boolean) {
+  return useQuery({
+    queryKey: [...userKeys.detail(id), 'sessions'],
+    queryFn: () => userApi.sessions(id),
+    enabled,
+  })
+}
+
+export function useRevokeUserSession(id: number) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (sessionId: number) => userApi.revokeSession(id, sessionId),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: [...userKeys.detail(id), 'sessions'] }),
+  })
 }

@@ -1,12 +1,17 @@
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
+import DevicesOutlinedIcon from '@mui/icons-material/DevicesOutlined'
+import HistoryIcon from '@mui/icons-material/History'
 import LockOpenOutlinedIcon from '@mui/icons-material/LockOpenOutlined'
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined'
 import LockResetOutlinedIcon from '@mui/icons-material/LockResetOutlined'
+import LogoutOutlinedIcon from '@mui/icons-material/LogoutOutlined'
 import PhoneIphoneOutlinedIcon from '@mui/icons-material/PhoneIphoneOutlined'
 import Button from '@mui/material/Button'
+import IconButton from '@mui/material/IconButton'
 import Paper from '@mui/material/Paper'
 import Skeleton from '@mui/material/Skeleton'
 import Stack from '@mui/material/Stack'
+import Tooltip from '@mui/material/Tooltip'
 import Typography from '@mui/material/Typography'
 import { useSnackbar } from 'notistack'
 import { useState } from 'react'
@@ -15,7 +20,8 @@ import { ConfirmDialog } from '@/components/ConfirmDialog'
 import { StatusChip } from '@/components/StatusChip'
 import { residentApi } from '@/features/resident/api'
 import { APP_ACCOUNT_STATUS } from '@/features/resident/constants'
-import { useAppAccount, useAppAccountAction } from '@/features/resident/hooks'
+import { LoginHistoryDrawer } from '@/features/resident/components/LoginHistoryDrawer'
+import { useAppAccount, useAppAccountAction, useAppSessions, useRevokeAppSession } from '@/features/resident/hooks'
 import type { AppAccountPassword, ResidentDetail } from '@/features/resident/types'
 import { TemporaryPasswordDialog } from '@/features/user/components/TemporaryPasswordDialog'
 import { getErrorMessage } from '@/lib/apiError'
@@ -30,12 +36,15 @@ export function AppAccountPanel({ resident }: { resident: ResidentDetail }) {
   const { data: account, isLoading } = useAppAccount(resident.id, hasAccount)
   const [password, setPassword] = useState<{ username: string; password: string; title: string } | null>(null)
   const [pending, setPending] = useState<Pending>(null)
+  const [historyOpen, setHistoryOpen] = useState(false)
 
   const create = useAppAccountAction(resident.id, residentApi.createAppAccount)
   const reset = useAppAccountAction(resident.id, residentApi.resetAppPassword)
   const lock = useAppAccountAction(resident.id, residentApi.lockAppAccount)
   const unlock = useAppAccountAction(resident.id, residentApi.unlockAppAccount)
   const remove = useAppAccountAction(resident.id, residentApi.deleteAppAccount)
+  const { data: sessions = [] } = useAppSessions(resident.id, hasAccount)
+  const revokeSession = useRevokeAppSession(resident.id)
   const living = resident.residenceStatus !== 'MOVED_OUT'
 
   const showPassword = (title: string) => (r: AppAccountPassword) =>
@@ -116,6 +125,53 @@ export function AppAccountPanel({ resident }: { resident: ResidentDetail }) {
         </Can>
       </Stack>
 
+      {hasAccount && sessions.length > 0 && (
+        <Stack spacing={1} sx={{ mt: 2, pt: 2, borderTop: 1, borderColor: 'divider' }}>
+          <Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between">
+            <Stack direction="row" spacing={1} alignItems="center">
+              <DevicesOutlinedIcon fontSize="small" color="action" />
+              <Typography variant="subtitle2" fontWeight={700}>
+                Thiết bị đang đăng nhập ({sessions.length})
+              </Typography>
+            </Stack>
+            <Button size="small" startIcon={<HistoryIcon fontSize="small" />} onClick={() => setHistoryOpen(true)}>
+              Xem lịch sử đăng nhập
+            </Button>
+          </Stack>
+          {sessions.map((s) => (
+            <Stack key={s.id} direction="row" spacing={1} alignItems="center" justifyContent="space-between">
+              <Typography variant="body2" color="text.secondary">
+                {s.deviceName ?? 'Không rõ thiết bị'} ·{' '}
+                {s.lastUsedAt ? `dùng gần nhất ${formatDateTime(s.lastUsedAt)}` : `đăng nhập ${formatDateTime(s.createdAt)}`}
+              </Typography>
+              <Can permission="RESIDENT_WRITE">
+                <Tooltip title="Đăng xuất thiết bị này">
+                  <IconButton
+                    size="small"
+                    disabled={revokeSession.isPending}
+                    onClick={() =>
+                      revokeSession.mutate(s.id, {
+                        onSuccess: () => enqueueSnackbar('Đã đăng xuất thiết bị.', { variant: 'success' }),
+                        onError: fail,
+                      })
+                    }
+                  >
+                    <LogoutOutlinedIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+              </Can>
+            </Stack>
+          ))}
+        </Stack>
+      )}
+      {hasAccount && sessions.length === 0 && (
+        <Stack direction="row" justifyContent="flex-end" sx={{ mt: 1 }}>
+          <Button size="small" startIcon={<HistoryIcon fontSize="small" />} onClick={() => setHistoryOpen(true)}>
+            Xem lịch sử đăng nhập
+          </Button>
+        </Stack>
+      )}
+
       <ConfirmDialog
         open={pending === 'lock'}
         title="Khoá tài khoản app?"
@@ -137,6 +193,7 @@ export function AppAccountPanel({ resident }: { resident: ResidentDetail }) {
         onClose={() => setPending(null)}
       />
       <TemporaryPasswordDialog value={password} onClose={() => setPassword(null)} />
+      <LoginHistoryDrawer open={historyOpen} onClose={() => setHistoryOpen(false)} residentId={resident.id} />
     </Paper>
   )
 }
