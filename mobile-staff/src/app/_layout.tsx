@@ -91,6 +91,21 @@ function Navigator() {
         <Stack.Screen name="surveys/index" options={{ title: 'Khảo sát ý kiến' }} />
         <Stack.Screen name="surveys/new" options={{ title: 'Thêm khảo sát' }} />
         <Stack.Screen name="surveys/[id]" options={{ title: 'Khảo sát' }} />
+        <Stack.Screen name="amenities/index" options={{ title: 'Danh mục tiện ích' }} />
+        <Stack.Screen name="amenities/new" options={{ title: 'Thêm tiện ích' }} />
+        <Stack.Screen name="amenities/[id]" options={{ title: 'Tiện ích' }} />
+        <Stack.Screen name="amenity-configs/[id]" options={{ title: 'Cấu hình tiện ích' }} />
+        <Stack.Screen name="service-types/index" options={{ title: 'Loại dịch vụ' }} />
+        <Stack.Screen name="service-types/new" options={{ title: 'Thêm loại dịch vụ' }} />
+        <Stack.Screen name="service-types/[id]" options={{ title: 'Loại dịch vụ' }} />
+        <Stack.Screen name="services/index" options={{ title: 'Dịch vụ' }} />
+        <Stack.Screen name="services/new" options={{ title: 'Thêm dịch vụ' }} />
+        <Stack.Screen name="services/[id]" options={{ title: 'Dịch vụ' }} />
+        <Stack.Screen name="orders/new" options={{ title: 'Tạo đơn dịch vụ' }} />
+        <Stack.Screen name="transactions/index" options={{ title: 'Lịch sử giao dịch' }} />
+        <Stack.Screen name="amenity-reports/index" options={{ title: 'Báo cáo tiện ích' }} />
+        <Stack.Screen name="bookings/index" options={{ title: 'Đăng ký tiện ích' }} />
+        <Stack.Screen name="bookings/new" options={{ title: 'Tạo lượt đặt' }} />
         <Stack.Screen name="profile-password" options={{ title: 'Đổi mật khẩu' }} />
       </Stack.Protected>
     </Stack>

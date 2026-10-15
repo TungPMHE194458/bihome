@@ -41,7 +41,7 @@ export default function ManageScreen() {
     {
       title: 'Quản lý tiện ích',
       items: [
-        { icon: 'calendar-check-outline', label: 'Đăng ký tiện ích', href: '/amenity-bookings', show: can('AMENITY_BOOKING_READ') },
+        { icon: 'calendar-check-outline', label: 'Đăng ký tiện ích', href: '/bookings', show: can('AMENITY_BOOKING_READ') },
         { icon: 'pool', label: 'Danh mục tiện ích', href: '/amenities', show: can('AMENITY_READ') },
         { icon: 'room-service-outline', label: 'Dịch vụ', href: '/services', show: can('SERVICE_READ') },
         { icon: 'tag-multiple-outline', label: 'Loại dịch vụ', href: '/service-types', show: can('SERVICE_READ') },
