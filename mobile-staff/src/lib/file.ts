@@ -61,6 +61,15 @@ export async function pickExcelFile(): Promise<PickedFile | null> {
   return { uri: asset.uri, name: asset.name, mimeType: asset.mimeType ?? EXCEL_MIME, blob }
 }
 
+/** Chọn một tệp bất kỳ (tài liệu PDF / Word / ảnh...). null = người dùng huỷ. */
+export async function pickDocumentFile(): Promise<PickedFile | null> {
+  const result = await DocumentPicker.getDocumentAsync({ copyToCacheDirectory: true })
+  if (result.canceled || !result.assets[0]) return null
+  const asset = result.assets[0]
+  const blob = Platform.OS === 'web' ? await fetch(asset.uri).then((r) => r.blob()) : undefined
+  return { uri: asset.uri, name: asset.name, mimeType: asset.mimeType ?? 'application/octet-stream', blob }
+}
+
 /** Gửi multipart/form-data với field "file" (dùng cho import Excel, upload ảnh thô). */
 export function toFormData(file: PickedFile, fieldName = 'file'): FormData {
   const form = new FormData()

@@ -10,6 +10,14 @@ export function money(value: number | null | undefined): string {
 export const formatDate = (v?: string | null) => (v ? dayjs(v).format('DD/MM/YYYY') : '—')
 export const formatDateTime = (v?: string | null) => (v ? dayjs(v).format('DD/MM/YYYY HH:mm') : '—')
 
+export function formatFileSize(bytes?: number | null): string {
+  if (bytes == null) return ''
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`
+  if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+  return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`
+}
+
 /** "2026-10" → "Tháng 10/2026" */
 export function periodLabel(period: string): string {
   const [y, m] = period.split('-')

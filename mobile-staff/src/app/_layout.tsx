@@ -110,6 +110,12 @@ function Navigator() {
         <Stack.Screen name="ticket-categories/new" options={{ title: 'Thêm danh mục' }} />
         <Stack.Screen name="ticket-categories/[id]" options={{ title: 'Danh mục yêu cầu' }} />
         <Stack.Screen name="tickets/new" options={{ title: 'Tạo yêu cầu' }} />
+        <Stack.Screen name="document-categories/index" options={{ title: 'Danh mục tài liệu' }} />
+        <Stack.Screen name="document-categories/new" options={{ title: 'Thêm danh mục' }} />
+        <Stack.Screen name="document-categories/[id]" options={{ title: 'Danh mục tài liệu' }} />
+        <Stack.Screen name="documents/index" options={{ title: 'Tài liệu' }} />
+        <Stack.Screen name="documents/new" options={{ title: 'Thêm tài liệu' }} />
+        <Stack.Screen name="documents/[id]" options={{ title: 'Tài liệu' }} />
         <Stack.Screen name="profile-password" options={{ title: 'Đổi mật khẩu' }} />
       </Stack.Protected>
     </Stack>
