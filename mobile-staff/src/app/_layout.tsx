@@ -116,6 +116,10 @@ function Navigator() {
         <Stack.Screen name="documents/index" options={{ title: 'Tài liệu' }} />
         <Stack.Screen name="documents/new" options={{ title: 'Thêm tài liệu' }} />
         <Stack.Screen name="documents/[id]" options={{ title: 'Tài liệu' }} />
+        <Stack.Screen name="fee-notices/index" options={{ title: 'Thông báo phí' }} />
+        <Stack.Screen name="fee-notices/[id]" options={{ title: 'Thông báo phí' }} />
+        <Stack.Screen name="payments/index" options={{ title: 'Lịch sử thanh toán' }} />
+        <Stack.Screen name="payments/[id]" options={{ title: 'Phiếu thu' }} />
         <Stack.Screen name="profile-password" options={{ title: 'Đổi mật khẩu' }} />
       </Stack.Protected>
     </Stack>

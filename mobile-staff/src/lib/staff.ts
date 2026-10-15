@@ -20,5 +20,7 @@ export { documentApi } from '@/lib/api/document'
 export { sosApi } from '@/lib/api/sos'
 export { meterApi } from '@/lib/api/meter'
 export { lookupApi } from '@/lib/api/lookup'
+export { feeNoticeApi } from '@/lib/api/feenotice'
+export { paymentApi } from '@/lib/api/payment'
 
 export const isWeb = Platform.OS === 'web'

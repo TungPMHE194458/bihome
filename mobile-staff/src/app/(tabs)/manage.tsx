@@ -58,6 +58,13 @@ export default function ManageScreen() {
       ],
     },
     {
+      title: 'Tài chính',
+      items: [
+        { icon: 'file-chart-outline', label: 'Thông báo phí', href: '/fee-notices', show: can('FEE_NOTICE_READ') },
+        { icon: 'receipt-text-outline', label: 'Lịch sử thanh toán', href: '/payments', show: can('PAYMENT_READ') },
+      ],
+    },
+    {
       title: 'Công cụ',
       items: [
         { icon: 'gauge', label: 'Ghi chỉ số điện nước', href: '/meter', show: can('METER_READING_WRITE') },
