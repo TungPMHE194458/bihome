@@ -22,5 +22,8 @@ export { meterApi } from '@/lib/api/meter'
 export { lookupApi } from '@/lib/api/lookup'
 export { feeNoticeApi } from '@/lib/api/feenotice'
 export { paymentApi } from '@/lib/api/payment'
+export { roleApi, userApi } from '@/lib/api/user'
+export { auditApi } from '@/lib/api/audit'
+export { announcementApi } from '@/lib/api/announcement'
 
 export const isWeb = Platform.OS === 'web'

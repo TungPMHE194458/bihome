@@ -65,6 +65,15 @@ export default function ManageScreen() {
       ],
     },
     {
+      title: 'Cài đặt',
+      items: [
+        { icon: 'account-cog-outline', label: 'Người dùng hệ thống', href: '/users', show: can('USER_READ') },
+        { icon: 'shield-account-outline', label: 'Vai trò & phân quyền', href: '/roles', show: can('ROLE_READ') },
+        { icon: 'bullhorn-outline', label: 'Soạn thông báo', href: '/announcements', show: can('NOTIFICATION_READ') },
+        { icon: 'history', label: 'Nhật ký hoạt động', href: '/audit-logs', show: can('AUDIT_LOG_READ') },
+      ],
+    },
+    {
       title: 'Công cụ',
       items: [
         { icon: 'gauge', label: 'Ghi chỉ số điện nước', href: '/meter', show: can('METER_READING_WRITE') },

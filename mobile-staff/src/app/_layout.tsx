@@ -120,6 +120,15 @@ function Navigator() {
         <Stack.Screen name="fee-notices/[id]" options={{ title: 'Thông báo phí' }} />
         <Stack.Screen name="payments/index" options={{ title: 'Lịch sử thanh toán' }} />
         <Stack.Screen name="payments/[id]" options={{ title: 'Phiếu thu' }} />
+        <Stack.Screen name="users/index" options={{ title: 'Người dùng hệ thống' }} />
+        <Stack.Screen name="users/new" options={{ title: 'Thêm người dùng' }} />
+        <Stack.Screen name="users/[id]" options={{ title: 'Người dùng' }} />
+        <Stack.Screen name="roles/index" options={{ title: 'Vai trò & phân quyền' }} />
+        <Stack.Screen name="roles/[id]" options={{ title: 'Vai trò' }} />
+        <Stack.Screen name="audit-logs/index" options={{ title: 'Nhật ký hoạt động' }} />
+        <Stack.Screen name="announcements/index" options={{ title: 'Soạn thông báo' }} />
+        <Stack.Screen name="announcements/new" options={{ title: 'Soạn thông báo' }} />
+        <Stack.Screen name="announcements/[id]" options={{ title: 'Thông báo' }} />
         <Stack.Screen name="profile-password" options={{ title: 'Đổi mật khẩu' }} />
       </Stack.Protected>
     </Stack>
