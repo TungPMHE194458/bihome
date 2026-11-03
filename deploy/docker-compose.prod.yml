@@ -1,0 +1,78 @@
+# BiHome production — chạy trên server (xem deploy/README.md):
+#   docker compose -p bihome --env-file ~/bihome/.env -f docker-compose.prod.yml up -d --build
+# Chỉ bihome-web mở cổng, và chỉ trên 127.0.0.1 (nginx của máy chủ chuyển tên miền vào). Oracle / API không mở ra ngoài.
+name: bihome
+
+services:
+  oracle:
+    image: gvenzl/oracle-free:23-slim-faststart
+    container_name: bihome-oracle
+    restart: unless-stopped
+    environment:
+      ORACLE_PASSWORD: ${ORACLE_SYS_PASSWORD}
+      ORACLE_DATABASE: BIHOMEDB
+      APP_USER: bihome
+      APP_USER_PASSWORD: ${BIHOME_DB_PASSWORD}
+      TZ: Asia/Ho_Chi_Minh
+    volumes:
+      - oracle-data:/opt/oracle/oradata   # bắt buộc volume, không để datafile trên overlayfs
+    mem_limit: 3584m   # Oracle Free tối đa 2 GB SGA+PGA; thực đo ~2,5 GB tính cả cache
+    healthcheck:
+      test: ["CMD", "healthcheck.sh"]
+      interval: 15s
+      timeout: 10s
+      retries: 40
+      start_period: 60s
+    networks: [bihome]
+
+  api:
+    build: ../backend
+    image: bihome-api:${BIHOME_TAG:-latest}
+    container_name: bihome-api
+    restart: unless-stopped
+    depends_on:
+      oracle:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      BIHOME_DB_URL: jdbc:oracle:thin:@bihome-oracle:1521/BIHOMEDB
+      BIHOME_DB_USERNAME: bihome
+      BIHOME_DB_PASSWORD: ${BIHOME_DB_PASSWORD}
+      BIHOME_JWT_SECRET: ${BIHOME_JWT_SECRET}
+      BIHOME_BANK_WEBHOOK_SECRET: ${BIHOME_BANK_WEBHOOK_SECRET:-}
+      BIHOME_CORS_ALLOWED_ORIGINS: ${BIHOME_CORS_ALLOWED_ORIGINS:-https://bihome.bitrust.vn}
+      BIHOME_FLYWAY_LOCATIONS: ${BIHOME_FLYWAY_LOCATIONS:-classpath:db/migration}
+      BIHOME_DEMO_IMAGES: ${BIHOME_DEMO_IMAGES:-false}
+      BIHOME_PUSH_ENABLED: ${BIHOME_PUSH_ENABLED:-false}
+    volumes:
+      - storage:/data/storage
+    mem_limit: 1536m
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8080/actuator/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 20
+      start_period: 90s
+    networks: [bihome]
+
+  web:
+    build: ../frontend
+    image: bihome-web:${BIHOME_TAG:-latest}
+    container_name: bihome-web
+    restart: unless-stopped
+    depends_on:
+      - api
+    ports:
+      - "127.0.0.1:${BIHOME_WEB_PORT:-18300}:80"
+    mem_limit: 128m
+    networks: [bihome]
+
+volumes:
+  oracle-data:
+    name: bihome-oracle-data
+  storage:
+    name: bihome-storage
+
+networks:
+  bihome:
+    name: bihome-net

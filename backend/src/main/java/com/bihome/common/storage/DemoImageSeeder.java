@@ -16,7 +16,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.context.annotation.Profile;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
@@ -24,14 +23,13 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionTemplate;
 
 /**
- * Chỉ profile local: gắn ảnh demo (ảnh chụp Unsplash / randomuser.me ở classpath {@code demo-images/}, tải bằng
+ * Chỉ khi bật {@code bihome.demo-images.enabled} (profile local, hoặc môi trường demo qua BIHOME_DEMO_IMAGES): gắn ảnh demo (ảnh chụp Unsplash / randomuser.me ở classpath {@code demo-images/}, tải bằng
  * {@code backend/tools/download_demo_images.py}) cho tòa nhà, căn hộ, tiện ích, dịch vụ chưa có ảnh và cư dân chưa có
  * ảnh đại diện. Tệp đặt tên {@code <nhóm>-<n>.jpg}; các bản ghi cùng nhóm lần lượt dùng từng biến thể. Mỗi mục đích chỉ gắn một lần (đã có tệp {@code CREATED_BY = demo-seed} thì bỏ qua — người dùng gỡ ảnh
  * sẽ không bị gắn lại); tệp demo bị mất khỏi {@code storage/} thì chép lại. Ghi bằng JDBC nên không vào lịch sử hoạt động.
  */
 @Slf4j
 @Component
-@Profile("local")
 @ConditionalOnProperty(name = "bihome.demo-images.enabled", havingValue = "true")
 @RequiredArgsConstructor
 public class DemoImageSeeder implements ApplicationRunner {

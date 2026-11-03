@@ -1,0 +1,25 @@
+# Profile prod (Docker, xem deploy/docker-compose.prod.yml). Mọi secret lấy từ biến môi trường (deploy/.env).
+spring:
+  datasource:
+    url: ${BIHOME_DB_URL}
+    username: ${BIHOME_DB_USERNAME}
+    password: ${BIHOME_DB_PASSWORD}
+  flyway:
+    # Thêm classpath:db/seed-local để nạp dữ liệu mẫu (môi trường demo). Seed dùng MERGE nên chạy lại không nhân bản.
+    locations: ${BIHOME_FLYWAY_LOCATIONS:classpath:db/migration}
+
+server:
+  # Sau reverse proxy (nginx máy chủ → nginx container): lấy IP / scheme thật từ X-Forwarded-* (lịch sử đăng nhập).
+  forward-headers-strategy: native
+  shutdown: graceful
+
+bihome:
+  cors:
+    # Web BQL cùng tên miền với API nên không cần CORS; giữ cho bản web của app mobile nếu có.
+    allowed-origins: ${BIHOME_CORS_ALLOWED_ORIGINS:https://bihome.bitrust.vn}
+  storage:
+    root: ${BIHOME_STORAGE_ROOT:/data/storage}
+  demo-images:
+    enabled: ${BIHOME_DEMO_IMAGES:false}
+  resident-app:
+    push-enabled: ${BIHOME_PUSH_ENABLED:false}
