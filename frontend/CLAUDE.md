@@ -10,6 +10,7 @@ pnpm build
 pnpm typecheck      # tsc --noEmit
 pnpm lint           # eslint
 pnpm test --run     # vitest + testing-library
+pnpm test --run src/components/FormDialog.test.tsx   # chạy 1 file test (thêm -t "<tên>" để lọc theo tên)
 pnpm gen:api        # openapi-typescript http://localhost:8080/v3/api-docs -> src/lib/api-schema.d.ts
 ```
 
@@ -33,14 +34,14 @@ src/
 │   ├── Sidebar/              # IconRail + MenuPanel, cấu hình menu ở menuConfig.ts
 │   └── AuthLayout.tsx        # trang đăng nhập/quên mật khẩu
 ├── components/               # component dùng chung, KHÔNG chứa logic nghiệp vụ
-│   ├── ListPage/             # ListPageLayout, PageBreadcrumb, ListToolbar, ViewModeToggle
+│   ├── ListPage/             # ListPageLayout, PageBreadcrumb, ListToolbar, ViewToggle
 │   ├── DataTable/            # DataTable, ColumnFilter (text/select/dateRange), RowActionMenu
 │   ├── CardGrid/             # lưới thẻ có ảnh cho chế độ xem "lưới"
-│   ├── form/                 # RHF wrappers: FormTextField, FormSelect, FormDatePicker, FormImageUpload, FormFileUpload
-│   ├── FormDialog.tsx, ConfirmDialog.tsx, StatusChip.tsx, EmptyState.tsx, FileIcon.tsx
-├── features/<module>/        # building, apartment, asset, resident, document, ticket, amenity, billing...
-│   ├── api.ts                # gọi axios, chỉ ở đây
-│   ├── hooks.ts              # useXxxList, useXxx, useCreateXxx... (TanStack Query) + queryKeys
+│   ├── form/                 # RHF wrappers (FormTextField, FormSelect, FormDatePicker, FormImageUpload...), AttachmentList, RichTextEditor
+│   ├── FormDialog.tsx, ConfirmDialog.tsx, ReasonDialog.tsx, ImportExcelDialog.tsx, AuthImage.tsx, Can.tsx...
+├── features/<module>/        # mỗi package backend một feature (feenotice, payment, vietqr... — không có "billing")
+│   ├── api.ts                # gọi axios, chỉ ở đây (feature nhỏ để luôn hook TanStack Query trong file này)
+│   ├── hooks.ts              # useXxxList, useXxx, useCreateXxx... (TanStack Query) + queryKeys — chỉ ~2/3 feature có
 │   ├── types.ts              # khớp DTO backend
 │   ├── schema.ts             # Zod schema cho form
 │   ├── constants.ts          # enum -> nhãn tiếng Việt + màu chip
@@ -49,11 +50,15 @@ src/
 ├── lib/
 │   ├── http.ts               # axios instance, interceptor gắn token + X-Building-Id, refresh token
 │   ├── queryClient.ts
+│   ├── api-types.ts          # PageResponse, ProblemDetail... dùng chung (viết tay)
+│   ├── modules.ts            # nhãn module dùng chung cho phân quyền + lịch sử hoạt động
 │   └── format.ts             # formatDateTime (DD/MM/YYYY HH:mm), formatFileSize, formatCurrency (VND)
+├── hooks/                    # useListParams (trạng thái URL của trang danh sách), usePinnedPagesSync
+├── pages/                    # DashboardPage, ErrorPages, UnderConstructionPage
 ├── stores/
 │   ├── authStore.ts          # accessToken (memory), currentUser, permissions
 │   ├── buildingStore.ts      # tòa nhà đang chọn (persist localStorage)
-│   └── uiStore.ts            # sidebar thu gọn, menu đang mở, trang đã ghim
+│   └── uiStore.ts            # sidebar thu gọn, menu đang mở; trang ghim đồng bộ server qua usePinnedPagesSync
 └── main.tsx
 ```
 
@@ -63,7 +68,8 @@ src/
 - Query key factory mỗi feature: `buildingKeys.all / list(params) / detail(id)`; mutation thành công → `invalidateQueries(buildingKeys.all)` + toast.
 - Trạng thái filter, phân trang, sắp xếp, chế độ xem (`view=list|grid`) đặt trong **URL search params** để reload/chia sẻ link vẫn giữ nguyên. Ô text filter debounce 400ms.
 - Form: React Hook Form + Zod; thông báo lỗi tiếng Việt; lỗi `errors[]` từ ProblemDetail map ngược vào field bằng `setError`.
-- Types: ưu tiên sinh từ OpenAPI (`pnpm gen:api`) rồi re-export trong `types.ts`.
+- Types: hiện viết tay trong `features/*/types.ts` (+ `lib/api-types.ts`), khớp DTO backend; `pnpm gen:api` có sẵn
+  nhưng chưa dùng (chưa có `api-schema.d.ts`).
 - Phân quyền UI: `<Can permission="BUILDING_WRITE">` ẩn nút; route có `meta.permission`, thiếu quyền → trang 403.
 - Không dùng `any`. Không inline style dài — dùng `sx` ngắn hoặc `styled`.
 - Mọi text tiếng Việt có dấu đầy đủ. Ngày giờ luôn qua `format.ts`.
@@ -111,6 +117,35 @@ icon ⊕ (tạo nhanh) · chuông thông báo (badge chấm đỏ) · lịch s�
 - Nút "Huỷ" (text) + "Lưu" (contained xanh); đang lưu → disabled + spinner. Đóng khi form dirty → hỏi xác nhận.
 - Upload ảnh: kéo thả, xem trước, chọn ảnh đại diện, xoá; upload ngay khi chọn qua `/files` và giữ `fileId` trong form.
 
+## Mẫu & bẫy đã gặp (bắt buộc theo)
+
+- Thêm trang thật: khai báo route trong `IMPLEMENTED` ở `src/app/router.tsx` (mục menu chưa có trang tự trỏ tới "Đang
+  phát triển"); cây menu + permission ở `layouts/Sidebar/menuConfig.ts`; nhãn module dùng chung cho phân quyền / lịch
+  sử ở `lib/modules.ts`. Trang danh sách mẫu: `features/user/pages/UserListPage.tsx` (useListParams + ListPageLayout +
+  DataTable); feature building-scoped mẫu: `features/apartment`.
+- `useListParams`: mọi thay đổi URL phải đi qua các hàm của hook (không gọi `setSearchParams` riêng), vì hook giữ bản
+  params mới nhất để nhiều lần cập nhật liên tiếp không ghi đè nhau.
+- Ảnh từ `/files` phải hiển thị qua `AuthImage`/`AuthAvatar`/`useAuthImage` (tải blob kèm token), không dùng
+  `<img src>` trực tiếp.
+- Zod 4: không dùng `.refine(v => v != null)` trên field nullable của form (thu hẹp kiểu output làm lệch kiểu
+  useForm/Form*); dùng `superRefine` như `features/asset/schema.ts`. Lỗi API có tên trường khác form thì truyền
+  `aliases` cho `applyFieldErrors`.
+- `FormDialog` có `loadError` / `onRetry`: dialog sửa phải truyền lỗi tải chi tiết để không hiện form trống (lưu sẽ gửi
+  `version` rỗng).
+- API dùng chung mọi tòa (danh mục tài liệu, màn hình Tòa nhà...) gọi với `skipBuildingContext`.
+- Component dùng chung nên tái dùng trước khi viết mới: `DataTable.highlightRow` (tô đỏ dòng), `CardGrid`
+  (`renderMedia`, `renderBadge`, `getDetails`, `getAccentColor`; `ListToolbar` tự hiện `ViewToggle` khi truyền `view`),
+  `form/AttachmentList`, `form/RichTextEditor` + `RichTextView` (contentEditable, không thư viện), `ImportExcelDialog`,
+  `AvatarUpload` (`purpose` AVATAR | RESIDENT_AVATAR), `features/apartment/components/ApartmentPicker` (`optional`),
+  `features/resident/components/ResidentPicker`, `features/resident/components/AudienceFields` (đối tượng nhận),
+  thẻ căn hộ `features/apartment/components/apartmentCard.tsx`. `DataTable` không truyền phân trang thì ẩn thanh phân
+  trang; `CardGrid` dùng `placeholderIcon` khi chưa có ảnh; `FormCheckbox` hiện lỗi của trường.
+- Kéo thả (Kanban, QuestionBuilder) dùng HTML5 drag-and-drop, không thêm thư viện, luôn có cách thay thế bằng
+  bàn phím / nút.
+
 ## Test
+- Hook và API cùng file `api.ts` thì `vi.mock` API không có tác dụng với hook → mock `@/lib/http` hoặc tách `hooks.ts`
+  (như `features/role`). Biểu đồ `@mui/x-charts`: mock `BarChart`/`PieChart`.
 - Component dùng chung (DataTable, ColumnFilter, FormDialog) có test Vitest + Testing Library.
-- Mỗi feature: test render trang list với dữ liệu mock (MSW) và submit form hợp lệ/không hợp lệ.
+- Mỗi feature: test render trang list với dữ liệu mock và submit form hợp lệ/không hợp lệ. Không dùng MSW — mock bằng
+  `vi.mock` (xem ghi chú đầu mục Test).

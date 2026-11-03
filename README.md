@@ -100,8 +100,9 @@ bihome/
 │       │   ├── feerate/ meter/ feenotice/ payment/ vietqr/   # tài chính
 │       │   ├── sos/ notification/ audit/ dashboard/ setting/
 │       │   ├── residentapp/      # API app cư dân (/api/v1/resident/**), tài khoản app, hộp thư, push
+│       │   ├── declaration/      # kê khai thành viên / xe từ app cư dân
 │       └── resources/
-│           ├── db/migration/     # Flyway V001…V170 (không sửa file đã chạy)
+│           ├── db/migration/     # Flyway V001…V201 (không sửa file đã chạy)
 │           ├── db/seed-local/    # dữ liệu mẫu R__ (chỉ profile local)
 │           └── fonts/            # Be Vietnam Pro (SIL OFL) cho PDF
 ├── frontend/
